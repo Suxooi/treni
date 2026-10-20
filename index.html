@@ -147,7 +147,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .ex-name{font-weight:600;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
 .ex-name .chev{display:inline-block;margin-left:6px;color:var(--muted);font-size:11px;transition:transform .2s}
 .ex.open .chev{transform:rotate(180deg)}
-.ex-meta{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.ex-meta{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .nextv{font-family:var(--f-num);font-weight:600;color:var(--ink)}
 .ex-count{display:flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums}
 .ex-count b{font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1}
@@ -209,6 +209,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .xdel:hover{background:var(--sunk);color:var(--ink)}
 .xdel.armed{background:var(--p-red);color:var(--on-plate);font-size:13px;font-weight:600;padding:0 12px}
 .bx-tech{grid-column:1/-1;padding:4px 0 2px}
+.pcfg{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;gap:8px 10px;padding-left:40px}
+.mini{display:grid;gap:3px}
+.mlab{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-left:12px}
+.mstep{display:flex;align-items:center;height:40px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi);overflow:hidden}
+.mstep button{border:0;background:transparent;width:36px;height:40px;font-size:18px;line-height:1}
+.mstep button:active{background:var(--sunk)}
+.mstep input{width:48px;height:40px;border:0;background:transparent;text-align:center;font-family:var(--f-num);font-size:16px;font-weight:600;color:var(--ink);padding:0}
+.bx .bx-tech{grid-row:3}
+@media (max-width:420px){.pcfg{padding-left:0}}
 .addrow{border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:10px}
 .addbtn{justify-self:start;border:1px dashed color-mix(in srgb,var(--muted) 50%,transparent);background:transparent;border-radius:999px;min-height:44px;padding:0 16px;font-size:14px;color:var(--muted)}
 .addform{display:flex;flex-wrap:wrap;gap:8px}
@@ -687,6 +696,8 @@ function draftFor(ex){
   if(!drafts[ex.id]){
     const l=lastFor(ex.id),d=Object.assign({},ex.def);
     if(l)['w','r','t','d'].forEach(f=>{if(l[f]!=null&&f in d)d[f]=l[f];});
+    const p=dayPlan(UI.date).find(x=>x.ex===ex.id);
+    if(p)['w','r','t','d'].forEach(f=>{if(p[f]!=null&&f in d)d[f]=p[f];});
     drafts[ex.id]=d;
   }
   return drafts[ex.id];
@@ -700,7 +711,13 @@ function fmtSet(s){
   }
   return '';
 }
-function fmtDraft(ex){return fmtSet(Object.assign({k:ex.kind},draftFor(ex)));}
+function fmtDraft(ex){
+  const d=draftFor(ex);
+  if(ex.kind==='wr')return (d.w?num(d.w)+' кг × ':'× ')+(d.r||0);
+  if(ex.kind==='reps')return (d.r||0)+' повт.';
+  if(ex.kind==='time')return dur(d.t||0);
+  return num(d.d||0)+' км';
+}
 // exercises shown for a day: the plan first, then anything logged that is not in the plan
 function dayItems(k){
   const plan=dayPlan(k),items=[],seen={};
@@ -786,7 +803,7 @@ async function connect(){
 
 /* ---------- actions ---------- */
 function defaultTab(k){return (dayPlan(k).length||daySets(k).length)?'day':'build';}
-function setDate(k){UI.date=k;UI.open=null;UI.armed=null;UI.addOpen=false;UI.tab=defaultTab(k);render();}
+function setDate(k){Object.keys(drafts).forEach(x=>delete drafts[x]);UI.date=k;UI.open=null;UI.armed=null;UI.addOpen=false;UI.tab=defaultTab(k);render();}
 function logSet(exId){
   const ex=getEx(exId);if(!ex)return;
   const d=draftFor(ex),s={id:uid(),ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,at:Date.now()};
@@ -811,7 +828,11 @@ function togglePick(id){
   const ex=getEx(id);if(!ex)return;
   const d=ensureDay(UI.date),i=d.plan.findIndex(p=>p.ex===id);
   if(i>=0)d.plan.splice(i,1);
-  else d.plan.push({ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,tu:ex.tu,goal:defGoal(ex)});
+  else{
+    const dr=draftFor(ex),item={ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,tu:ex.tu,goal:defGoal(ex)};
+    ['w','r','t','d'].forEach(f=>{if(dr[f]!=null)item[f]=dr[f];});
+    d.plan.push(item);
+  }
   persistDay(UI.date);render();
 }
 function unplan(id){
@@ -865,7 +886,7 @@ function restoreDir(dir){
 
 /* ---------- fields ---------- */
 function fieldsOf(ex){
-  if(ex.kind==='wr')return[['w','Вес, кг',2],['r','Повторы',1]];
+  if(ex.kind==='wr')return[['w',ex.eq==='гиря'?'Гиря, кг':'Вес, кг',2],['r','Повторы',1]];
   if(ex.kind==='reps')return[['r','Повторы',1]];
   if(ex.kind==='time')return ex.tu==='m'?[['t','Время, мин',60]]:[['t','Время, сек',15]];
   return[['d','Дистанция, км',0.5],['t','Время, мин',60]];
@@ -920,6 +941,42 @@ function renderStats(){
   if(extra.length)html+='<div class="substat">'+extra.join(' · ')+'</div>';
   $('stats').innerHTML=html;
 }
+function cfgFields(ex){
+  const f=[['goal','Подходы',1]];
+  if(ex.kind==='wr')f.push(['r','Повторы',1],['w',ex.eq==='гиря'?'Гиря, кг':'Вес, кг',2]);
+  else if(ex.kind==='reps')f.push(['r','Повторы',1]);
+  else if(ex.kind==='time')f.push(ex.tu==='m'?['t','Минуты',60]:['t','Секунды',5]);
+  else f.push(['d','Км',0.5]);
+  return f;
+}
+function cfgShown(ex,p,f){
+  let v=p[f];
+  if(v==null)v=f==='goal'?defGoal(ex):draftFor(ex)[f]||0;
+  if(f==='t'&&ex.tu==='m')v=Math.round(v/60*10)/10;
+  return String(v).replace('.',',');
+}
+function planCfg(ex,p){
+  return '<div class="pcfg">'+cfgFields(ex).map(c=>
+    '<div class="mini"><label class="mlab" for="pc-'+ex.id+'-'+c[0]+'">'+c[1]+'</label><div class="mstep">'+
+    '<button data-pstep="'+ex.id+'|'+c[0]+'|-1" aria-label="'+c[1]+': меньше">−</button>'+
+    '<input id="pc-'+ex.id+'-'+c[0]+'" class="pnum" inputmode="decimal" autocomplete="off" data-pex="'+ex.id+'" data-pf="'+c[0]+'" value="'+cfgShown(ex,p,c[0])+'">'+
+    '<button data-pstep="'+ex.id+'|'+c[0]+'|1" aria-label="'+c[1]+': больше">+</button></div></div>').join('')+'</div>';
+}
+function setPlanField(ex,p,f,v,clamp){
+  if(!isFinite(v))v=0;
+  if(f==='t'&&ex.tu==='m')v=v*60;
+  if(clamp){
+    if(f==='goal')v=Math.max(1,Math.min(20,Math.round(v)));
+    else if(f==='r')v=Math.max(1,Math.min(500,Math.round(v)));
+    else if(f==='w')v=Math.max(0,Math.min(200,v));
+    else if(f==='t')v=Math.max(5,Math.round(v));
+    else if(f==='d')v=Math.max(0,v);
+  }
+  p[f]=Math.round(v*100)/100;
+  delete drafts[ex.id];
+}
+let planTimer=null;
+function savePlanSoon(){clearTimeout(planTimer);planTimer=setTimeout(()=>persistDay(UI.date),400);}
 function renderTabs(){
   const tabs=['day','build','stats'];
   tabs.forEach(t=>$('tab-'+t).setAttribute('aria-selected',String(UI.tab===t)));
@@ -939,7 +996,7 @@ function exRow(it){
   const ex=it.ex,s=daySets(UI.date),mine=s.filter(x=>x.ex===ex.id),n=mine.length,open=UI.open===ex.id;
   const done=it.goal&&n>=it.goal;
   let row='<div class="ex'+(open?' open':'')+(done?' done':'')+'" style="'+dirStyle(ex.dir)+'">'+
-    '<button class="ex-main" data-open="'+ex.id+'" aria-expanded="'+open+'"><span class="ex-name">'+esc(ex.name)+'<span class="chev">▾</span></span><span class="ex-meta">'+esc(ex.eq)+' · подход <span class="nextv" id="q-'+ex.id+'">'+esc(fmtDraft(ex))+'</span></span></button>'+
+    '<button class="ex-main" data-open="'+ex.id+'" aria-expanded="'+open+'"><span class="ex-name">'+esc(ex.name)+'<span class="chev">▾</span></span><span class="ex-meta">'+esc(ex.eq)+' · <span class="nextv" id="q-'+ex.id+'">'+esc(fmtDraft(ex))+'</span></span></button>'+
     '<div class="ex-count" aria-label="'+n+(it.goal?' из '+it.goal:'')+' '+plural(n,PODH)+'"><b class="'+(n?'':'zero')+'">'+n+'</b>'+(it.goal?'<small>/'+it.goal+'</small>':'')+'</div>'+
     '<button class="quick tint press" data-quick="'+ex.id+'" aria-label="Отметить подход: '+esc(ex.name)+'">'+PLUS+'</button>';
   if(open){
@@ -1001,7 +1058,7 @@ function buildView(){
       '<button class="pick" data-pick="'+ex.id+'" aria-pressed="'+!!p+'"><span class="chk">✓</span><span class="ex-name">'+esc(ex.name)+'</span><span class="ex-meta">'+esc(ex.eq)+' · '+KLABEL[ex.kind]+'</span></button>'+
       '<button class="techbtn press" data-tech="'+ex.id+'" aria-expanded="'+tOpen+'" aria-label="Техника: '+esc(ex.name)+'">'+(tOpen?'Скрыть':'Техника')+'</button>'+
       '<button class="xdel'+(armed?' armed':'')+'" data-xdel="'+ex.id+'" aria-label="Удалить упражнение «'+esc(ex.name)+'» из списка">'+(armed?'Удалить?':'×')+'</button>'+
-      (p?'<div class="goal"><button data-goal="'+ex.id+'|-1" aria-label="Меньше подходов">−</button><span>'+p.goal+' '+plural(p.goal,PODH)+'</span><button data-goal="'+ex.id+'|1" aria-label="Больше подходов">+</button></div>':'')+
+      (p?planCfg(ex,p):'')+
       (tOpen?'<div class="bx-tech">'+techBlock(ex)+'</div>':'')+
       '</div>';
   }).join('');
@@ -1072,12 +1129,21 @@ $('toastUndo').addEventListener('click',()=>{if(undoFn)undoFn();undoFn=null;$('t
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   const ds=b.dataset;
-  if(!ds.xdel&&UI.armed){UI.armed=null;if(UI.tab==='build'&&!ds.pick&&!ds.goal)renderMain();}
+  if(!ds.xdel&&UI.armed){UI.armed=null;if(UI.tab==='build'&&!ds.pick&&!ds.goal&&!ds.pstep)renderMain();}
   if(ds.tab){UI.tab=ds.tab;UI.open=null;UI.addOpen=false;render();window.scrollTo({top:0,behavior:'smooth'});return;}
   if(ds.dir){UI.dir=ds.dir;UI.addOpen=false;lsSet('wt-dir',ds.dir);render();return;}
   if(ds.tech){UI.tech=UI.tech===ds.tech?null:ds.tech;renderMain();return;}
   if(ds.pick){togglePick(ds.pick);return;}
   if(ds.goal){const p=ds.goal.split('|');changeGoal(p[0],Number(p[1]));return;}
+  if(ds.pstep){
+    const q=ds.pstep.split('|'),ex=getEx(q[0]),p=dayPlan(UI.date).find(x=>x.ex===q[0]);if(!ex||!p)return;
+    const c=cfgFields(ex).find(x=>x[0]===q[1]);if(!c)return;
+    const cur=p[q[1]]!=null?p[q[1]]:(q[1]==='goal'?defGoal(ex):draftFor(ex)[q[1]]||0);
+    let v=cur+Number(q[2])*c[2];if(q[1]==='t'&&ex.tu==='m')v=v/60;
+    setPlanField(ex,p,q[1],v,true);
+    const inp=$('pc-'+ex.id+'-'+q[1]);if(inp)inp.value=cfgShown(ex,p,q[1]);
+    savePlanSoon();return;
+  }
   if(ds.xdel){if(UI.armed===ds.xdel)deleteEx(ds.xdel);else{UI.armed=ds.xdel;renderMain();}return;}
   if(ds.restore){restoreDir(ds.restore);return;}
   if(ds.copy){copyPlan(ds.copy);return;}
@@ -1107,6 +1173,11 @@ document.addEventListener('click',e=>{
   if(b.id==='todayBtn'){setDate(todayKey());return;}
 });
 document.addEventListener('input',e=>{
+  if(e.target.classList&&e.target.classList.contains('pnum')){
+    const t=e.target,ex=getEx(t.dataset.pex),p=dayPlan(UI.date).find(x=>x.ex===t.dataset.pex);
+    if(ex&&p){const v=parseFloat(String(t.value).replace(',','.'));if(isFinite(v)){setPlanField(ex,p,t.dataset.pf,v,false);savePlanSoon();}}
+    return;
+  }
   const t=e.target;if(!t.classList||!t.classList.contains('num'))return;
   const ex=getEx(t.dataset.ex);if(!ex)return;
   setField(ex,t.dataset.f,t.value);
@@ -1115,6 +1186,13 @@ document.addEventListener('input',e=>{
 document.addEventListener('keydown',e=>{
   const t=e.target;
   if(e.key==='Enter'&&t.classList&&t.classList.contains('num')){e.preventDefault();logSet(t.dataset.ex);}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t.classList||!t.classList.contains('pnum'))return;
+  const ex=getEx(t.dataset.pex),p=dayPlan(UI.date).find(x=>x.ex===t.dataset.pex);if(!ex||!p)return;
+  const v=parseFloat(String(t.value).replace(',','.'));
+  setPlanField(ex,p,t.dataset.pf,isFinite(v)?v:(t.dataset.pf==='goal'?1:0),true);
+  t.value=cfgShown(ex,p,t.dataset.pf);savePlanSoon();
 });
 document.addEventListener('submit',e=>{if(e.target.id==='addForm'){e.preventDefault();addCustom();}});
 
@@ -1157,7 +1235,7 @@ setInterval(()=>{const t=todayKey();if(t!==lastToday){if(UI.date===lastToday)UI.
 if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 
 /* ---------- boot ---------- */
-loadLocal();normConfig();UI.tab=defaultTab(UI.date);setStatus();render();connect();
+loadLocal();if(window.__SEED){S.days=clone(window.__SEED.days);S.config=clone(window.__SEED.config);}normConfig();UI.tab=defaultTab(UI.date);if(window.__UI)Object.assign(UI,window.__UI);setStatus();render();connect();
 })();
 </script>
 </body>
