@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Журнал тренировок</title>
+<meta name="description" content="Сборка тренировки на день и счётчик подходов: свой вес, гиря, жгуты.">
+<meta name="theme-color" content="#E6EAF0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0D11" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Тренировки">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>html,body{margin:0}:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: phone-first single column under a floating glass day bar, with a floating glass tab bar; plate-coloured light drifts behind the glass */
+:root{
+  --bg:#E6EAF0; --ink:#12161B; --muted:#56606C; --line:rgba(18,22,27,.10); --solid:#FFFFFF; --sunk:rgba(18,22,27,.05);
+  --glass:rgba(255,255,255,.52); --glass-strong:rgba(255,255,255,.74); --glass-edge:rgba(255,255,255,.75); --glass-hi:rgba(255,255,255,.95); --glass-shade:rgba(255,255,255,.18);
+  --shadow:0 10px 30px rgba(30,40,60,.12),0 2px 6px rgba(30,40,60,.06);
+  --blob:.42;
+  --heat:#1E4FD6;
+  --p-red:#C6282E; --p-blue:#1F55C7; --p-yellow:#D29400; --p-green:#22804A; --p-orange:#D25A16; --p-teal:#0E7F80; --p-violet:#6A46C0; --p-graphite:#4A5561;
+  --on-plate:#FFFFFF; --on-yellow:#14181D;
+  --dir:var(--p-red); --on-dir:var(--on-plate);
+  --f-display:"Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:22px; --r-s:14px;
+  --gut-l:max(16px, env(safe-area-inset-left, 0px)); --gut-r:max(16px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B0D11; --ink:#ECEFF3; --muted:#9AA4B0; --line:rgba(255,255,255,.09); --solid:#1A1E24; --sunk:rgba(255,255,255,.05);
+    --glass:rgba(30,34,42,.50); --glass-strong:rgba(34,38,46,.74); --glass-edge:rgba(255,255,255,.14); --glass-hi:rgba(255,255,255,.22); --glass-shade:rgba(255,255,255,.05);
+    --shadow:0 12px 34px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);
+    --blob:.36;
+    --heat:#6F95FF;
+    --p-red:#F0585D; --p-blue:#5E8DF3; --p-yellow:#F2BE3A; --p-green:#4AB576; --p-orange:#F08A4B; --p-teal:#3CB6B4; --p-violet:#9E83EE; --p-graphite:#9CA8B4;
+    --on-plate:#0B0D11; --on-yellow:#0B0D11;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B0D11; --ink:#ECEFF3; --muted:#9AA4B0; --line:rgba(255,255,255,.09); --solid:#1A1E24; --sunk:rgba(255,255,255,.05);
+  --glass:rgba(30,34,42,.50); --glass-strong:rgba(34,38,46,.74); --glass-edge:rgba(255,255,255,.14); --glass-hi:rgba(255,255,255,.22); --glass-shade:rgba(255,255,255,.05);
+  --shadow:0 12px 34px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3);
+  --blob:.36;
+  --heat:#6F95FF;
+  --p-red:#F0585D; --p-blue:#5E8DF3; --p-yellow:#F2BE3A; --p-green:#4AB576; --p-orange:#F08A4B; --p-teal:#3CB6B4; --p-violet:#9E83EE; --p-graphite:#9CA8B4;
+  --on-plate:#0B0D11; --on-yellow:#0B0D11;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;min-height:100%}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--dir);outline-offset:2px}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ambient light behind the glass */
+.ambient{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.ambient i{position:absolute;border-radius:50%;filter:blur(56px);opacity:var(--blob);will-change:transform}
+.ambient .b1{width:75vmax;height:75vmax;left:-30vmax;top:-28vmax;background:var(--dir);transition:background .6s;animation:drift 26s ease-in-out infinite alternate}
+.ambient .b2{width:52vmax;height:52vmax;right:-24vmax;top:18vh;background:var(--p-blue);animation:drift 31s ease-in-out infinite alternate-reverse}
+.ambient .b3{width:58vmax;height:58vmax;left:-18vmax;bottom:-30vmax;background:var(--p-yellow);opacity:calc(var(--blob)*.8);animation:drift 37s ease-in-out infinite alternate}
+.ambient .b4{width:40vmax;height:40vmax;right:-10vmax;bottom:-8vmax;background:var(--p-teal);opacity:calc(var(--blob)*.7);animation:drift 29s ease-in-out infinite alternate-reverse}
+@keyframes drift{to{transform:translate(6vmax,5vmax) scale(1.1)}}
+
+/* liquid glass */
+.glass{
+  position:relative;
+  background:
+    radial-gradient(120% 70% at 12% -10%, var(--glass-shade), transparent 55%),
+    linear-gradient(160deg, rgba(255,255,255,.22), rgba(255,255,255,0) 42%),
+    var(--glass);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid var(--glass-edge);
+  box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 var(--glass-shade),inset 1px 0 0 var(--glass-shade),var(--shadow);
+}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.glass{background:var(--glass-strong)}}
+.press{transition:transform .22s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
+.press:active{transform:scale(.95)}
+.tint{
+  background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,0) 55%),color-mix(in srgb,var(--dir) 86%,transparent);
+  color:var(--on-dir);border:1px solid color-mix(in srgb,var(--dir) 60%,rgba(255,255,255,.6));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 4px rgba(0,0,0,.12),0 6px 16px color-mix(in srgb,var(--dir) 32%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);
+}
+
+/* shell */
+.app{position:relative;z-index:1;max-width:620px;margin:0 auto;padding-left:var(--gut-l);padding-right:var(--gut-r);padding-block:0 calc(112px + env(safe-area-inset-bottom, 0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:10;background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.appbar{position:sticky;top:env(safe-area-inset-top, 0px);z-index:12;padding-block:10px 8px}
+.appbar-in{display:flex;align-items:center;gap:6px;border-radius:999px;padding:6px}
+.logo{position:relative;flex:none;width:40px;height:40px;display:grid;place-items:center}
+.logo svg{width:34px;height:34px}
+.logo::after{content:"";position:absolute;right:2px;bottom:3px;width:9px;height:9px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 2px var(--solid)}
+.logo.ok::after{background:var(--p-green)}
+.navbtn{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.navbtn:hover{background:var(--sunk)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.navbtn svg{width:20px;height:20px}
+.daylabel{flex:1;min-width:0;display:grid;text-align:center;line-height:1.15}
+.daylabel b{font-family:var(--f-display);font-weight:500;font-size:18px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daylabel span{font-size:12.5px;color:var(--muted)}
+.todaybtn{flex:none;border:0;border-radius:999px;height:36px;padding:0 12px;font-size:13px;font-weight:600;margin-right:2px}
+.stack{display:grid;gap:14px}
+.screen{display:grid;gap:14px}
+
+/* tab bar */
+.tabbar{position:fixed;z-index:14;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom, 0px));width:min(440px,calc(100% - var(--gut-l) - var(--gut-r)));display:grid;grid-template-columns:repeat(3,1fr);border-radius:999px;padding:6px;--ti:0}
+.tab-ind{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/3);border-radius:999px;transform:translateX(calc(var(--ti)*100%));transition:transform .45s cubic-bezier(.3,1.45,.45,1);background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.08)),color-mix(in srgb,var(--dir) 22%,transparent);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),0 4px 12px color-mix(in srgb,var(--dir) 22%,transparent)}
+.tab{position:relative;z-index:1;border:0;background:transparent;height:54px;border-radius:999px;display:grid;justify-items:center;align-content:center;gap:2px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .2s}
+.tab svg{width:23px;height:23px}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"] svg{color:var(--dir)}
+.tc{position:absolute;top:4px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--dir);color:var(--on-dir);font-family:var(--f-num);font-size:10.5px;line-height:18px;text-align:center}
+
+/* hero */
+.hero{border-radius:var(--r);padding:18px 18px 16px;display:grid;gap:10px}
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hero-n{font-family:var(--f-display);font-weight:600;font-size:56px;line-height:.95;font-variant-numeric:tabular-nums}
+.hero-l{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.ring{--pct:0;flex:none;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--dir) calc(var(--pct)*1%),var(--sunk) 0);display:grid;place-items:center;position:relative}
+.ring::before{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--glass-strong);box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
+.ring span{position:relative;font-family:var(--f-num);font-weight:600;font-size:16px}
+.hero-sub{font-size:13.5px;color:var(--muted)}
+
+/* groups and rows */
+.group{display:grid;gap:8px}
+.glabel{margin:6px 6px 0;display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:500;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.glabel .n{margin-left:auto;font-family:var(--f-num);letter-spacing:0;font-size:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent)}
+.exlist{border-radius:var(--r);overflow:hidden;display:grid}
+.ex{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px 12px;padding:10px 10px 10px 16px;min-height:68px}
+.ex + .ex{border-top:1px solid var(--line)}
+.ex.open{background:var(--sunk)}
+.ex-main{all:unset;cursor:pointer;display:grid;gap:3px;min-width:0;padding:4px 0}
+.ex-main:focus-visible{outline:2px solid var(--dir);outline-offset:4px;border-radius:6px}
+.ex-name{font-weight:600;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.ex-name .chev{display:inline-block;margin-left:6px;color:var(--muted);font-size:11px;transition:transform .2s}
+.ex.open .chev{transform:rotate(180deg)}
+.ex-meta{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.nextv{font-family:var(--f-num);font-weight:600;color:var(--ink)}
+.ex-count{display:flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums}
+.ex-count b{font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1}
+.ex-count b.zero{color:var(--muted);opacity:.45}
+.ex-count small{font-family:var(--f-display);font-size:16px;color:var(--muted)}
+.ex.done .ex-count b{color:var(--dir)}
+.ex.done .ex-name::after{content:" ✓";color:var(--dir);font-weight:700}
+.quick{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center}
+.quick svg{width:24px;height:24px}
+.panel{grid-column:1/-1;display:grid;gap:12px;padding:8px 0 6px}
+.fields{display:flex;flex-wrap:wrap;gap:12px}
+.field{display:grid;gap:5px;flex:1 1 140px}
+.field label{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.stepper{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;align-items:stretch;border-radius:16px;overflow:hidden;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)}
+.stepper button{border:0;background:transparent;height:48px;font-size:22px;line-height:1}
+.stepper button:active{background:var(--sunk)}
+.stepper input{min-width:0;width:100%;border:0;background:transparent;text-align:center;font-family:var(--f-num);font-size:18px;font-weight:600;color:var(--ink)}
+.panel-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.log{border-radius:999px;min-height:48px;padding:0 22px;font-weight:600;font-size:15px}
+.log.wide{width:100%}
+.rm{border:0;background:transparent;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:8px 4px}
+.goalnote{font-size:12.5px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 3px 3px 10px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-edge);font-family:var(--f-num);font-size:13px;font-variant-numeric:tabular-nums}
+.chip i{font-style:normal;color:var(--muted);font-size:11px}
+.chip button{border:0;background:transparent;width:28px;height:28px;border-radius:50%;color:var(--muted);font-size:15px;line-height:1}
+.chip button:hover{background:var(--sunk);color:var(--ink)}
+.addmore{border-radius:var(--r);min-height:56px;border:1px dashed var(--glass-edge);font-weight:600;color:var(--muted)}
+.empty{margin:0;color:var(--muted);font-size:14px;max-width:46ch}
+.emptycard{border-radius:var(--r);padding:24px 20px;display:grid;gap:14px;justify-items:start}
+.emptycard h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:24px;text-transform:uppercase;letter-spacing:.02em;text-wrap:balance}
+.toolrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ghost{border-radius:999px;min-height:44px;padding:0 16px;font-size:14px;font-weight:500}
+
+/* builder */
+.sec{margin:4px 6px 0;font-family:var(--f-display);font-weight:500;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.chipscroll{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 8px;margin:0 calc(var(--gut-l) * -1) 0 calc(var(--gut-r) * -1);padding-left:var(--gut-l);padding-right:var(--gut-r);scrollbar-width:none}
+.chipscroll::-webkit-scrollbar{display:none}
+.dir{flex:none;scroll-snap-align:start;display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px 0 8px;border-radius:999px;font-weight:600;font-size:14px;white-space:nowrap}
+.dir .disc{width:26px;height:26px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--c) 70%,#000 30%),inset 0 1px 0 6px rgba(255,255,255,.25);position:relative;flex:none}
+.dir .disc::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--bg)}
+.dir .badge{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.dir[aria-pressed="true"]{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),color-mix(in srgb,var(--c) 85%,transparent);color:var(--on-c);border-color:color-mix(in srgb,var(--c) 60%,white)}
+.dir[aria-pressed="true"] .badge{color:inherit;opacity:.85}
+.bx{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px 8px;padding:10px 10px 10px 14px;min-height:64px}
+.bx + .bx{border-top:1px solid var(--line)}
+.bx.in{background:color-mix(in srgb,var(--dir) 10%,transparent)}
+.pick{all:unset;cursor:pointer;display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:10px;align-items:center;min-width:0;padding:4px 0}
+.pick:focus-visible{outline:2px solid var(--dir);outline-offset:4px;border-radius:6px}
+.box{grid-row:span 2;width:28px;height:28px;border-radius:9px;border:2px solid color-mix(in srgb,var(--muted) 55%,transparent);display:grid;place-items:center;font-size:15px;font-weight:700;color:transparent;transition:background .2s,border-color .2s,transform .25s cubic-bezier(.3,1.6,.5,1)}
+.bx.in .box{background:var(--dir);border-color:var(--dir);color:var(--on-dir);transform:scale(1.05)}
+.goal{grid-column:1;grid-row:2;justify-self:start;margin-left:40px;display:flex;align-items:center;border-radius:999px;background:var(--glass-strong);border:1px solid var(--glass-edge);overflow:hidden}
+.goal button{border:0;background:transparent;width:40px;height:36px;font-size:18px}
+.goal span{min-width:76px;text-align:center;font-family:var(--f-num);font-size:13px;font-variant-numeric:tabular-nums}
+.gph{display:none}
+.techbtn{grid-column:2;grid-row:1;border:1px solid var(--glass-edge);background:var(--glass-strong);border-radius:999px;height:36px;padding:0 12px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.techbtn[aria-expanded="true"]{color:var(--ink)}
+.xdel{grid-column:3;grid-row:1;border:0;background:transparent;color:var(--muted);height:36px;min-width:36px;border-radius:999px;font-size:19px;padding:0 8px}
+.xdel:hover{background:var(--sunk);color:var(--ink)}
+.xdel.armed{background:var(--p-red);color:var(--on-plate);font-size:13px;font-weight:600;padding:0 12px}
+.bx-tech{grid-column:1/-1;padding:4px 0 2px}
+.addrow{border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:10px}
+.addbtn{justify-self:start;border:1px dashed color-mix(in srgb,var(--muted) 50%,transparent);background:transparent;border-radius:999px;min-height:44px;padding:0 16px;font-size:14px;color:var(--muted)}
+.addform{display:flex;flex-wrap:wrap;gap:8px}
+.addform input,.addform select{border:1px solid var(--glass-edge);background:var(--glass-strong);color:var(--ink);border-radius:14px;min-height:46px;padding:0 14px;font:inherit;font-size:16px;min-width:0}
+.addform input{flex:1 1 100%}
+.addform select{flex:1 1 160px}
+.restore{border:0;background:transparent;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:6px 6px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:var(--r);overflow:hidden}
+.stat{padding:16px 18px;min-width:0}
+.stat:nth-child(2n){border-left:1px solid var(--line)}
+.stat:nth-child(n+3){border-top:1px solid var(--line)}
+.stat .v{font-family:var(--f-display);font-weight:600;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:.48em;font-weight:500;color:var(--muted);margin-left:3px}
+.stat .l{margin-top:6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat:first-child .v{color:var(--dir)}
+.substat{grid-column:1/-1;border-top:1px solid var(--line);padding:10px 18px;font-size:13px;color:var(--muted)}
+.card{border-radius:var(--r);padding:16px 18px;display:grid;gap:12px;min-width:0}
+.card .sec{margin:0}
+.grp{display:grid;gap:6px}
+.grp + .grp{padding-top:10px;border-top:1px solid var(--line)}
+.grp-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;min-width:0}
+.grp-h .name{overflow-wrap:anywhere;min-width:0}
+.grp-h .n{margin-left:auto;font-family:var(--f-num);font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:96px minmax(0,1fr) 28px;align-items:center;gap:8px;font-size:13px}
+.bar .track{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.bar .fill{height:100%;background:var(--c);border-radius:5px}
+.bar .cnt{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums}
+.bar.none{color:var(--muted)}
+.cap{font-size:12px;color:var(--muted);margin:0}
+.heat{display:grid;grid-template-columns:22px repeat(12,minmax(0,1fr));gap:4px;font-size:10.5px;color:var(--muted)}
+.heat .ml{grid-row:1;white-space:nowrap;overflow:visible;height:14px}
+.heat .wd{display:flex;align-items:center}
+.cell{aspect-ratio:1;max-width:100%;border:0;border-radius:4px;padding:0;background:var(--sunk);min-height:0}
+.cell.l1{background:color-mix(in srgb,var(--heat) 30%,transparent)}
+.cell.l2{background:color-mix(in srgb,var(--heat) 55%,transparent)}
+.cell.l3{background:color-mix(in srgb,var(--heat) 78%,transparent)}
+.cell.l4{background:var(--heat)}
+.cell.fut{background:transparent;cursor:default}
+.cell.sel{box-shadow:0 0 0 2px var(--ink)}
+.legend{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted)}
+.legend .cell{width:12px;cursor:default}
+.status{margin:0 6px;font-size:12.5px;color:var(--muted);text-align:center}
+
+/* technique */
+.tech{display:grid;grid-template-columns:1fr;gap:12px;align-items:start;border-radius:18px;padding:12px;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)}
+@media (min-width:560px){.tech{grid-template-columns:minmax(170px,220px) minmax(0,1fr)}}
+.tech-none{display:block}
+.demo{margin:0;display:grid;gap:6px;width:100%;max-width:300px;justify-self:center}
+.demo svg{width:100%;height:auto;aspect-ratio:168/140;max-width:100%;background:var(--sunk);border-radius:12px;display:block}
+.demo figcaption{font-size:11.5px;color:var(--muted);text-align:center}
+.demo line{stroke-linecap:round}
+.demo .fg{stroke:var(--ink);stroke-width:4.5}
+.demo .far{stroke:var(--muted);opacity:.7}
+.demo .gnd{stroke:var(--muted);stroke-width:1.5;opacity:.35}
+.demo .eq{stroke:var(--muted);stroke-width:3}
+.demo .thin{stroke-width:1.6}
+.demo .band{stroke:var(--dir);stroke-width:1.8}
+.demo .hd{fill:var(--ink)}
+.demo .kb{fill:var(--dir)}
+.demo .box{fill:var(--sunk);stroke:var(--muted);stroke-width:1}
+.cues{min-width:0;display:grid;gap:8px;font-size:14px}
+.cues ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.cues li::marker{font-family:var(--f-num);color:var(--dir);font-weight:600}
+.warn{margin:0;font-size:13px;color:var(--muted);padding:9px 11px;border-radius:12px;background:var(--sunk)}
+.warn b{color:var(--ink);font-weight:600}
+
+/* toast */
+.toast{position:fixed;z-index:16;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom, 0px));width:min(440px,calc(100% - var(--gut-l) - var(--gut-r)));border-radius:18px;padding:10px 8px 10px 16px;display:flex;align-items:center;gap:10px;font-size:14px;background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,0) 45%),color-mix(in srgb,var(--ink) 82%,transparent);color:var(--bg);-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),var(--shadow);animation:pop .35s cubic-bezier(.3,1.5,.5,1)}
+@keyframes pop{from{transform:translate(-50%,12px) scale(.96);opacity:0}}
+.toast span{flex:1;min-width:0;overflow-wrap:anywhere}
+.toast button{border:0;background:rgba(255,255,255,.16);color:var(--bg);font-weight:600;border-radius:999px;min-height:36px;padding:0 14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.filebtn{display:inline-flex;align-items:center;cursor:pointer}
+</style>
+
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+
+<div class="app">
+  <header class="appbar">
+    <h1 class="vh">Журнал тренировок</h1>
+    <div class="appbar-in glass">
+      <span class="logo" id="syncDot" title="Загрузка"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="var(--dir)"/><circle cx="20" cy="20" r="12.5" fill="none" stroke="var(--on-dir)" stroke-opacity=".35" stroke-width="1.5"/><circle cx="20" cy="20" r="4.5" fill="var(--bg)"/></svg></span>
+      <button class="navbtn" id="prevDay" aria-label="Предыдущий день"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="daylabel" aria-live="polite"><b id="dayRel">Сегодня</b><span id="dayDate"></span></div>
+      <button class="navbtn" id="nextDay" aria-label="Следующий день"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="todaybtn tint press" id="todayBtn" hidden>Сегодня</button>
+    </div>
+  </header>
+
+  <main class="screen">
+    <div id="mainBody" class="stack"></div>
+    <div id="statsView" class="stack" hidden>
+      <section class="stats glass" id="stats" aria-label="Итоги дня"></section>
+      <section class="card glass"><h2 class="sec">Журнал дня</h2><div id="daylog"></div></section>
+      <section class="card glass"><h2 class="sec" id="weekTitle">Неделя</h2><div id="weekbars"></div></section>
+      <section class="card glass"><h2 class="sec">Последние 12 недель</h2><div id="heat"></div></section>
+      <section class="card glass"><h2 class="sec">Резервная копия</h2><p class="cap">Записи хранятся только на этом телефоне. Сохраняйте копию время от времени, чтобы не потерять их при очистке данных браузера или смене телефона.</p><div class="toolrow"><button class="log tint press" id="exportBtn">Сохранить копию</button><label class="ghost glass press filebtn">Загрузить копию<input type="file" id="importFile" class="vh" accept="application/json,.json"></label></div></section>
+      <p class="status" id="status">Загрузка…</p>
+    </div>
+  </main>
+</div>
+
+<nav class="tabbar glass" id="tabbar" role="tablist" aria-label="Разделы">
+  <span class="tab-ind" aria-hidden="true"></span>
+  <button class="tab" role="tab" id="tab-day" data-tab="day" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Тренировка<span class="tc" id="tabCount" hidden></span></button>
+  <button class="tab" role="tab" id="tab-build" data-tab="build" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><path d="M17 14v6M14 17h6"/></svg>Собрать</button>
+  <button class="tab" role="tab" id="tab-stats" data-tab="stats" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>Итоги</button>
+</nav>
+<div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button id="toastUndo" hidden>Отменить</button></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- catalog ---------- */
+const DIRS=[
+  {id:'chest',name:'Грудь',c:'red'},
+  {id:'back',name:'Спина',c:'blue'},
+  {id:'legs',name:'Ноги',c:'yellow'},
+  {id:'shoulders',name:'Плечи',c:'green'},
+  {id:'arms',name:'Руки',c:'orange'},
+  {id:'core',name:'Кор и пресс',c:'teal'},
+  {id:'cardio',name:'Кардио',c:'violet'},
+  {id:'mobility',name:'Растяжка',c:'graphite'}
+];
+const DIR=Object.fromEntries(DIRS.map(d=>[d.id,d]));
+// [dir, id, name, kind, equipment, defaults, timeUnit]
+const BASE=[
+ ['chest','pushups','Отжимания','reps','вес тела',{r:20}],
+ ['chest','dips','Отжимания на брусьях','reps','брусья',{r:12}],
+ ['chest','widepu','Отжимания широким хватом','reps','вес тела',{r:15}],
+ ['chest','declinepu','Отжимания с ногами на опоре','reps','вес тела',{r:12}],
+ ['chest','kbfloor','Жим гири лёжа на полу','wr','гиря',{w:16,r:10}],
+ ['chest','bandpress','Жим жгута от груди','reps','жгут',{r:15}],
+ ['chest','bandfly','Сведение рук со жгутом','reps','жгут',{r:15}],
+ ['back','pullups','Подтягивания','reps','турник',{r:8}],
+ ['back','widepull','Подтягивания широким хватом','reps','турник',{r:6}],
+ ['back','invrow','Австралийские подтягивания','reps','брусья / низкий турник',{r:12}],
+ ['back','kbrow','Тяга гири в наклоне','wr','гиря',{w:16,r:10}],
+ ['back','bandrow','Тяга жгута к поясу','reps','жгут',{r:15}],
+ ['back','bandpulldown','Тяга жгута сверху','reps','жгут',{r:15}],
+ ['back','superman','Супермен','reps','вес тела',{r:15}],
+ ['legs','squat','Приседания','reps','вес тела',{r:25}],
+ ['legs','goblet','Гоблет-присед','wr','гиря',{w:16,r:12}],
+ ['legs','kbdl','Становая тяга с гирей','wr','гиря',{w:24,r:10}],
+ ['legs','bulgarian','Болгарские сплит-приседы','reps','вес тела',{r:10}],
+ ['legs','lunges','Выпады','reps','вес тела',{r:12}],
+ ['legs','pistol','Пистолетик','reps','вес тела',{r:5}],
+ ['legs','glute','Ягодичный мост','reps','вес тела',{r:20}],
+ ['legs','bandwalk','Шаги со жгутом в стороны','reps','жгут',{r:20}],
+ ['shoulders','kbpress','Жим гири одной рукой','wr','гиря',{w:16,r:8}],
+ ['shoulders','pike','Отжимания «пикой»','reps','вес тела',{r:10}],
+ ['shoulders','wallhs','Стойка на руках у стены','time','вес тела',{t:30},'s'],
+ ['shoulders','halo','Гало с гирей','wr','гиря',{w:12,r:10}],
+ ['shoulders','facepull','Тяга жгута к лицу','reps','жгут',{r:15}],
+ ['shoulders','bandlat','Разведение рук со жгутом','reps','жгут',{r:15}],
+ ['shoulders','pullapart','Растягивание жгута перед собой','reps','жгут',{r:20}],
+ ['arms','chinups','Подтягивания обратным хватом','reps','турник',{r:8}],
+ ['arms','diamond','Отжимания узким хватом','reps','вес тела',{r:15}],
+ ['arms','tricepdips','Отжимания на брусьях на трицепс','reps','брусья',{r:12}],
+ ['arms','kbcurl','Подъём гири на бицепс','wr','гиря',{w:12,r:10}],
+ ['arms','bandcurl','Сгибание рук со жгутом','reps','жгут',{r:15}],
+ ['arms','bandext','Разгибание рук со жгутом','reps','жгут',{r:15}],
+ ['core','plank','Планка','time','вес тела',{t:60},'s'],
+ ['core','sideplank','Боковая планка','time','вес тела',{t:40},'s'],
+ ['core','hlr','Подъём ног в висе','reps','турник',{r:10}],
+ ['core','lsit','Уголок на брусьях','time','брусья',{t:20},'s'],
+ ['core','hollow','Лодочка','time','вес тела',{t:30},'s'],
+ ['core','tgu','Турецкий подъём','wr','гиря',{w:16,r:3}],
+ ['core','windmill','Мельница с гирей','wr','гиря',{w:12,r:5}],
+ ['core','pallof','Паллоф-жим со жгутом','reps','жгут',{r:12}],
+ ['cardio','swings','Махи гирей','wr','гиря',{w:24,r:20}],
+ ['cardio','snatch','Рывок гири','wr','гиря',{w:16,r:10}],
+ ['cardio','burpee','Бёрпи','reps','вес тела',{r:15}],
+ ['cardio','jumpsquat','Выпрыгивания из приседа','reps','вес тела',{r:15}],
+ ['cardio','climbers','Скалолаз','time','вес тела',{t:45},'s'],
+ ['cardio','run','Бег','dist','улица',{d:5,t:1800}],
+ ['mobility','hang','Вис на турнике','time','турник',{t:45},'s'],
+ ['mobility','dipstretch','Растяжка груди на брусьях','time','брусья',{t:30},'s'],
+ ['mobility','dislocates','Выкруты плеч со жгутом','reps','жгут',{r:10}],
+ ['mobility','hamstr','Растяжка задней поверхности бедра со жгутом','time','жгут',{t:60},'s'],
+ ['mobility','pigeon','Поза голубя','time','вес тела',{t:60},'s'],
+ ['mobility','catcow','Кошка-корова','reps','вес тела',{r:10}]
+];
+const KDEF={wr:{w:16,r:10},reps:{r:10},time:{t:60},dist:{d:3,t:1200}};
+const KLABEL={wr:'вес × повторы',reps:'повторы',time:'время',dist:'дистанция и время'};
+/* ---------- technique: cues + animated stick-figure schemes ---------- */
+const TECH={
+ pushups:['Ладони чуть шире плеч, тело — прямая линия от макушки до пяток.','Опускайтесь, пока грудь почти не коснётся пола; локти под углом около 45° к корпусу.','Выжмите пол до прямых рук, выдох на подъёме.','Провисший таз или задранные вверх ягодицы.'],
+ dips:['Упор на прямых руках, плечи опущены от ушей.','Опускайтесь с небольшим наклоном корпуса вперёд до угла в локтях около 90°.','Поднимитесь до полного выпрямления рук.','Слишком глубокое опускание через боль в плечах.'],
+ widepu:['Ладони в полтора раза шире плеч, пальцы чуть наружу.','Корпус прямой, локти уходят в стороны и назад.','Опускайтесь до ощущения растяжения в груди, без боли.','Локти разведены строго под 90° к корпусу — лишняя нагрузка на плечи.'],
+ declinepu:['Ноги на опоре 30–50 см, руки чуть шире плеч.','Тело прямое, пресс и ягодицы напряжены.','Опускайтесь грудью к полу, акцент на верх груди и плечи.','Прогиб в пояснице.'],
+ kbfloor:['Лёжа на спине, колени согнуты, гиря в руке над плечом.','Опустите локоть до касания пола, короткая пауза.','Выжмите гирю вверх до прямой руки, запястье ровное.','Запястье заваливается назад под весом гири.'],
+ bandpress:['Жгут закреплён за спиной на уровне груди или обёрнут вокруг спины.','Кисти у груди, локти чуть ниже плеч.','Выжмите руки вперёд до прямых и медленно верните.','Плечи поднимаются к ушам.'],
+ bandfly:['Жгут закреплён за спиной, руки разведены, локти слегка согнуты и зафиксированы.','Сведите руки перед грудью по широкой дуге.','Медленно разведите до линии плеч.','Сгибание и разгибание локтей вместо движения в плечах.'],
+ pullups:['Хват сверху чуть шире плеч, вис на прямых руках.','Опустите лопатки и тяните локти к рёбрам.','Подбородок выше перекладины, затем опускайтесь под контролем до прямых рук.','Раскачка и рывки корпусом.'],
+ widepull:['Хват заметно шире плеч.','Тяните грудь к перекладине, локти идут вниз и в стороны.','Опускайтесь медленно, не бросая тело вниз.','Неполная амплитуда: подъём только до уровня глаз.'],
+ invrow:['Перекладина или брусья на уровне пояса, тело под ними прямое, пятки на полу.','Тяните грудь к перекладине, сводя лопатки.','Опускайтесь до прямых рук. Чем горизонтальнее тело, тем тяжелее.','Таз провисает к полу.'],
+ kbrow:['Наклон корпуса с прямой спиной, колени мягкие.','Тяните гирю к поясу, локоть скользит вдоль корпуса.','Внизу рука полностью выпрямляется.','Скругление спины и рывок корпусом.'],
+ bandrow:['Жгут закреплён спереди на уровне пояса или груди.','Стойте прямо, колени мягкие, руки вытянуты.','Тяните кисти к поясу, сводя лопатки, и медленно отпустите.','Отклонение корпуса назад вместо работы спины.'],
+ bandpulldown:['Жгут закреплён высоко над головой.','Тяните кисти к груди, локти вниз к рёбрам.','Вверху руки прямые, но плечи не поднимаются к ушам.','Тяга одними руками без опускания лопаток.'],
+ superman:['Лёжа на животе, руки вытянуты вперёд.','Одновременно поднимите руки, грудь и ноги на несколько сантиметров.','Задержитесь на 1–2 секунды, взгляд в пол.','Запрокидывание головы назад.'],
+ squat:['Стопы на ширине плеч, носки чуть наружу.','Таз назад и вниз, колени идут по линии носков.','Бёдра до параллели с полом или ниже, пятки не отрываются.','Колени заваливаются внутрь.'],
+ goblet:['Гиря у груди за «рога», локти смотрят вниз.','Садитесь между коленей, спина прямая.','Внизу локти почти касаются коленей; вставайте через пятки.','Гиря отходит от груди вперёд и тянет спину.'],
+ kbdl:['Гиря между стоп, стопы на ширине плеч.','Отведите таз назад с прямой спиной и возьмите гирю.','Встаньте, толкая пол ногами и выпрямляя таз.','Круглая спина в нижней точке.'],
+ bulgarian:['Задняя нога носком на опоре высотой около колена.','Передняя стопа далеко впереди, корпус прямой или чуть наклонён.','Опускайтесь, пока колено задней ноги почти не коснётся пола.','Переднее колено заваливается внутрь.'],
+ lunges:['Шаг вперёд, корпус прямой, руки на поясе.','Опуститесь до угла около 90° в обоих коленях.','Оттолкнитесь передней ногой и вернитесь в стойку.','Слишком короткий шаг: передняя пятка отрывается от пола.'],
+ pistol:['Одна нога вытянута вперёд, руки вперёд для баланса.','Медленно садитесь на опорной ноге, пятка на полу.','Вставайте без рывка. Для облегчения держитесь за опору.','Колено опорной ноги заваливается внутрь.'],
+ glute:['Лёжа на спине, стопы ближе к ягодицам.','Поднимите таз до прямой линии от коленей до плеч и сожмите ягодицы.','Опускайтесь медленно, не расслабляясь внизу.','Прогиб в пояснице вместо работы ягодиц.'],
+ bandwalk:['Мини-жгут на щиколотках или над коленями.','Полуприсед, корпус прямой.','Шагайте в сторону, не давая жгуту ослабнуть.','Колени сводятся внутрь.'],
+ kbpress:['Гиря на груди в «рэке», предплечье вертикально.','Выжмите вверх до прямой руки, бицепс у уха.','Опустите под контролем обратно на грудь.','Прогиб в пояснице и наклон корпуса в сторону.'],
+ pike:['Упор лёжа с поднятым тазом — тело «домиком».','Опускайте макушку к полу перед ладонями, локти назад.','Выжмитесь обратно до прямых рук.','Таз опускается, и упражнение превращается в обычные отжимания.'],
+ wallhs:['Ладони на ширине плеч в 15–30 см от стены, выход в стойку махом или шагая ногами по стене.','Руки прямые, плечи тянутся к ушам, пресс напряжён.','Держите время и дышите ровно.','Сильный прогиб в пояснице.'],
+ halo:['Гиря вверх дном за «рога» у подбородка.','Проведите её по кругу вокруг головы, близко к ней.','Корпус неподвижен, пресс напряжён; смените направление.','Голова уходит от гири вместо движения рук.'],
+ facepull:['Жгут закреплён на уровне лица.','Тяните концы к лицу, разводя локти вверх и в стороны.','В конце кисти у ушей, лопатки сведены.','Локти опущены — работает спина вместо задних дельт.'],
+ bandlat:['Жгут под стопами, концы в руках.','Поднимите прямые руки через стороны до уровня плеч.','Опускайте медленно.','Подъём выше плеч с поднятием надплечий.'],
+ pullapart:['Жгут в прямых руках перед собой на уровне плеч или над головой.','Растяните его в стороны, сводя лопатки.','Вернитесь медленно, не теряя натяжения.','Сгибание локтей.'],
+ chinups:['Хват снизу на ширине плеч.','Тяните локти вниз к корпусу, подбородок над перекладиной.','Опускайтесь до прямых рук.','Неполное выпрямление рук внизу.'],
+ diamond:['Ладони рядом под грудью, пальцы образуют ромб.','Локти идут назад вдоль корпуса.','Опускайтесь грудью к кистям и выжмитесь.','Локти разъезжаются в стороны.'],
+ tricepdips:['Корпус вертикально, без наклона вперёд.','Опускайтесь до 90° в локтях, локти назад.','Выжмитесь до прямых рук.','Опускание ниже 90° через боль в плечах.'],
+ kbcurl:['Гиря в руке, локоть прижат к корпусу.','Согните руку, не выводя локоть вперёд.','Опускайте медленно до прямой руки.','Раскачка корпусом.'],
+ bandcurl:['Жгут под стопами, ладони смотрят вперёд.','Сгибайте руки, локти у корпуса.','Пауза вверху, медленно вниз.','Локти уходят вперёд.'],
+ bandext:['Жгут закреплён внизу за спиной или под задней стопой.','Кисти за головой, локти смотрят вверх.','Разгибайте руки вверх, локти остаются на месте.','Локти разъезжаются в стороны.'],
+ plank:['Упор на предплечьях, локти под плечами.','Тело — прямая линия, ягодицы и пресс напряжены.','Дышите ровно, держите время.','Провисание поясницы.'],
+ sideplank:['Локоть под плечом, стопы друг на друге.','Поднимите таз до прямой линии от головы до стоп.','Держите, не заваливаясь вперёд или назад.','Таз опускается к полу.'],
+ hlr:['Вис на прямых руках, лопатки слегка опущены.','Поднимите прямые ноги до параллели с полом или выше.','Опускайте медленно, без раскачки.','Махи ногами по инерции.'],
+ lsit:['Упор на брусьях на прямых руках, плечи опущены.','Поднимите прямые ноги до параллели с полом.','Держите время. Облегчённый вариант — с согнутыми коленями.','Сутулость и поднятые к ушам плечи.'],
+ hollow:['Лёжа на спине, поясница прижата к полу.','Поднимите лопатки и прямые ноги, руки вытянуты за голову.','Держите положение «лодочки».','Поясница отрывается от пола.'],
+ tgu:['Лёжа, гиря в прямой руке над плечом, нога с той же стороны согнута.','Поднимитесь на локоть, затем на ладонь; рука с гирей всё время вертикальна.','Дальше мост, колено под себя, встать; вернуться в обратном порядке.','Взгляд уходит с гири, и рука перестаёт быть вертикальной.'],
+ windmill:['Гиря над головой в прямой руке, стопы развёрнуты в сторону.','Отведите таз и наклоняйтесь вбок, скользя свободной рукой по ноге к полу.','Смотрите на гирю, рука с ней остаётся вертикальной.','Рука с гирей сгибается в локте.'],
+ pallof:['Жгут закреплён сбоку на уровне груди.','Выжмите кисти от груди вперёд, не давая корпусу повернуться.','Пауза 2 секунды, верните к груди.','Корпус поворачивается к точке крепления.'],
+ swings:['Гиря чуть впереди, наклон с прямой спиной.','Заведите гирю между ног и резко разогните таз.','Гиря взлетает до уровня груди за счёт бёдер, руки только направляют.','Подъём гири руками и приседание вместо наклона.'],
+ snatch:['Старт как в махе, гиря проходит близко к корпусу.','Резко разогните таз и «подсядьте» под гирю, вытолкнув руку вверх.','Зафиксируйте прямую руку над головой; гиря мягко ложится на предплечье.','Широкая дуга — гиря бьёт по предплечью.'],
+ burpee:['Присядьте и поставьте ладони на пол.','Прыжком уйдите в упор лёжа, при желании отожмитесь.','Верните ноги к рукам и выпрыгните вверх, руки над головой.','Провисание таза в упоре лёжа.'],
+ jumpsquat:['Присед до параллели, руки отведены назад.','Взрывной прыжок вверх с махом рук.','Мягко приземлитесь на носки и сразу уходите в следующий присед.','Жёсткое приземление на прямые ноги.'],
+ climbers:['Упор на прямых руках, плечи над кистями.','Поочерёдно подтягивайте колени к груди в быстром темпе.','Таз держите на одной линии с плечами.','Таз задирается вверх.'],
+ run:['Короткий шаг с приземлением под центр тяжести.','Корпус чуть наклонён вперёд, плечи расслаблены.','Руки согнуты примерно под 90° и работают вперёд-назад.','Длинный шаг с ударом на пятку.'],
+ hang:['Хват сверху на ширине плеч, руки прямые.','Расслабьте плечи или слегка опустите лопатки — активный вис.','Дышите ровно, держите время.','Резкое спрыгивание после долгого виса.'],
+ dipstretch:['Упор на брусьях, медленно опуститесь ниже обычного.','Корпус чуть вперёд, почувствуйте растяжение груди и плеч.','Держите без боли и выходите плавно.','Пружинящие движения в нижней точке.'],
+ dislocates:['Жгут в прямых руках широким хватом.','Проведите руки через верх за спину и обратно.','Сужайте хват постепенно, от тренировки к тренировке.','Сгибание локтей и подъём плеч.'],
+ hamstr:['Лёжа на спине, жгут через стопу поднятой ноги.','Тяните ногу к себе, колено прямое, вторая нога на полу.','Держите 30–60 секунд, спокойно дышите.','Отрыв таза от пола и сгибание колена.'],
+ pigeon:['Передняя нога согнута перед собой, голень поперёк корпуса.','Задняя нога вытянута назад, таз ровно.','Плавно опускайте корпус вперёд на руки или предплечья.','Таз заваливается на сторону согнутой ноги.'],
+ catcow:['На четвереньках: кисти под плечами, колени под тазом.','На выдохе округлите спину и опустите голову — «кошка».','На вдохе прогнитесь и посмотрите вперёд — «корова».','Резкие рывки — двигайтесь плавно.']
+};
+
+// pose: p hip, t torso angle (180 = upright), w/w2 hand targets, a/a2 ankle targets, ft/ft2 foot angle, hd head tilt, ko kettlebell offset
+const PUA={p:[87,97.3],t:113.4,w:[120,120],a:[43.8,116],ft:20};
+const PUB={p:[89.4,109.3],t:98.5,w:[120,120],a:[43.8,116],ft:20};
+const SQB={p:[64,100],t:145,a:[80,119]};
+const ST={p:[78,72],t:180,a:[80,119]};
+const st=o=>Object.assign({},ST,o);
+const G=['ground'];
+const TPL={
+ pushup:{fr:[PUA,PUB],pr:G},
+ decline:{fr:[{p:[84.4,88.8],t:99.3,w:[118,120],a:[40,96],ft:20},{p:[86.2,100.5],t:84.4,w:[118,120],a:[40,96],ft:20}],pr:['ground','box']},
+ pike:{fr:[{p:[72,72],t:51,w:[128,118],a:[56,116],ft:20},{p:[76,76],t:48.8,w:[128,118],a:[56,116],ft:20}],pr:G},
+ dips:{fr:[{p:[82,61],t:177,w:[84,62],a:[64,94]},{p:[78.7,80.8],t:165,w:[84,62],a:[60,110]}],pr:['pbars62']},
+ tdips:{fr:[{p:[83,61],t:179,w:[84,62],a:[66,96]},{p:[87,82],t:178,w:[84,62],a:[70,114]}],pr:['pbars62']},
+ floorpress:{fr:[{p:[60,116],t:92,w:[90,96],a:[30,119],ft:85},{p:[60,116],t:92,w:[97,78],a:[30,119],ft:85}],pr:G,kb:1,eb:-1,bell:{at:'w',off:[-3,-6]}},
+ bpress:{fr:[st({w:[90,42]}),st({w:[114,40]})],pr:['ground','postL'],band:[[[22,40],'w']]},
+ bfly:{fr:[st({w:[80,42]}),st({w:[112,42]})],pr:['ground','postL'],band:[[[22,40],'w']]},
+ pullup:{fr:[{p:[80,78],t:180,w:[86,6],a:[62,112]},{p:[78,49],t:178,w:[86,6],a:[60,84]}],pr:['bar']},
+ invrow:{fr:[{p:[84.6,110.6],t:100.5,w:[112,70],a:[40,119],ft:175},{p:[83,100.3],t:113.4,w:[112,70],a:[40,119],ft:175}],pr:['ground','lowbar'],eb:-1},
+ kbrow:{fr:[{p:[70,74],t:125,a:[78,119],w:[100,90]},{p:[70,74],t:125,a:[78,119],w:[82,70]}],pr:G,bell:{at:'w',off:[0,8]}},
+ brow:{fr:[st({t:178,w:[112,46]}),st({t:178,w:[84,64]})],pr:['ground','postR'],band:[[[148,48],'w']]},
+ bpull:{fr:[st({w:[86,2]}),st({w:[90,40]})],pr:G,band:[[[92,-14],'w']]},
+ superman:{fr:[{p:[70,116],t:90,w:[142,118],a:[24,118],ft:-90},{p:[70,116],t:100,w:[136,94],a:[28,100],ft:-90}],pr:G},
+ squat:{fr:[st({w:[112,42]}),Object.assign({w:[117,74]},SQB)],pr:G},
+ goblet:{fr:[st({w:[90,46]}),Object.assign({w:[96,80]},SQB)],pr:G,bell:{at:'w',off:[3,6]}},
+ kbdl:{fr:[{p:[66,82],t:120,a:[80,119],w:[96,100]},st({w:[80,73]})],pr:G,bell:{at:'w',off:[0,8]}},
+ bulgarian:{fr:[{p:[78,74],t:178,a:[102,119],a2:[44,96],ft2:-70,w:[84,72]},{p:[74,96],t:170,a:[102,119],a2:[44,96],ft2:-70,w:[84,94]}],pr:['ground','box']},
+ lunge:{fr:[{p:[76,78],t:180,a:[100,119],a2:[50,114],ft2:40,w:[80,76]},{p:[74,98],t:180,a:[100,119],a2:[50,114],ft2:40,w:[78,96]}],pr:G},
+ pistol:{fr:[st({a2:[98,110],w:[110,46]}),{p:[66,104],t:140,a:[80,119],a2:[116,100],w:[118,78]}],pr:G},
+ glute:{fr:[{p:[70,117],t:-88,a:[100,119],w:[72,120],ft:85},{p:[70,96],t:-59,a:[100,119],w:[74,120],ft:85}],pr:G},
+ bwalk:{v:'f',fr:[{p:[80,76],t:180,a:[70,119],a2:[90,119],w:[66,76],w2:[94,76]},{p:[74,76],t:180,a:[56,119],a2:[90,119],w:[60,76],w2:[88,76]}],pr:G,band:[['a','a2']]},
+ kbpress:{fr:[st({w:[84,30]}),st({w:[80,-1]})],pr:G,bell:{at:'w',off:[5,-1]}},
+ wallhs:{fr:[{p:[56,46],t:0,w:[58,118],a:[46,0],ft:180},{p:[57,47],t:1,w:[58,118],a:[47,1],ft:180}],pr:['ground','wall']},
+ halo:{fr:[st({w:[92,26]}),st({w:[66,18]})],pr:G,bell:{at:'w',off:[0,-7]}},
+ facepull:{fr:[st({w:[110,30]}),st({w:[86,20]})],pr:['ground','postR'],eb:-1,band:[[[148,28],'w']]},
+ blat:{v:'f',fr:[{p:[80,72],t:180,a:[72,119],a2:[88,119],w:[64,74],w2:[96,74]},{p:[80,72],t:180,a:[72,119],a2:[88,119],w:[32,38],w2:[128,38]}],pr:G,band:[['a','w'],['a2','w2']]},
+ apart:{v:'f',fr:[{p:[80,72],t:180,a:[72,119],a2:[88,119],w:[76,4],w2:[84,4]},{p:[80,72],t:180,a:[72,119],a2:[88,119],w:[34,30],w2:[126,30]}],pr:G,band:[['w','w2']]},
+ kbcurl:{fr:[st({w:[80,73]}),st({w:[94,40]})],pr:G,bell:{at:'w',off:[0,8]}},
+ bcurl:{fr:[st({w:[80,73]}),st({w:[94,40]})],pr:G,band:[[[82,121],'w']]},
+ bext:{fr:[st({w:[66,22]}),st({w:[80,-1]})],pr:G,band:[[[62,121],'w']]},
+ plank:{fr:[{p:[74.8,107.5],t:102,w:[128,118],a:[30,116],ft:20}],pr:G},
+ sideplank:{fr:[{p:[74.8,107.5],t:102,w:[128,118],w2:[112,64],a:[30,116],ft:20}],pr:G},
+ hlr:{fr:[{p:[80,76],t:180,w:[86,6],a:[80,123]},{p:[80,76],t:178,w:[86,6],a:[127,74]}],pr:['bar']},
+ lsit:{fr:[{p:[84,70],t:180,w:[84,70],a:[131,71]}],pr:['pbars70']},
+ hollow:{fr:[{p:[80,116],t:110.5,w:[148,96],a:[36,100],ft:-90}],pr:G},
+ tgu:{fr:[{p:[60,116],t:92,w:[96,78],w2:[112,119],a:[30,119],ft:85},{p:[60,116],t:140,w:[84,51],w2:[104,120],a:[30,119],ft:85}],pr:G,kb:1,bell:{at:'w',off:[-3,-6]}},
+ windmill:{v:'f',fr:[{p:[80,72],t:180,a:[66,119],a2:[96,119],w:[66,72],w2:[93,-1]},{p:[86,74],t:220,a:[66,119],a2:[96,119],w:[60,92],w2:[70,2]}],pr:G,bell:{at:'w2',off:[3,-6]}},
+ pallof:{fr:[st({w:[88,44]}),st({w:[114,44]})],pr:['ground','postR'],band:[[[148,46],'w']]},
+ swing:{fr:[{p:[62,72],t:120,a:[80,119],w:[76,86]},st({w:[114,38]})],pr:G,bell:{at:'w',off:[0,8]}},
+ snatch:{fr:[{p:[62,72],t:120,a:[80,119],w:[76,86],ko:[0,8]},st({w:[80,-1],ko:[-5,5]})],pr:G,bell:{at:'w',off:[0,8]}},
+ burpee:{fr:[{p:[80,64],t:178,a:[81,111],ft:30,w:[90,-4]},{p:[72,104],t:130,a:[80,119],ft:80,w:[106,120]},{p:[73,97.3],t:113.4,w:[106,120],a:[29.8,116],ft:20}],seq:[0,1,2,1],pr:G},
+ jumpsq:{fr:[Object.assign({w:[66,96]},SQB),{p:[80,64],t:178,a:[81,111],ft:30,w:[112,8]}],pr:G},
+ climbers:{fr:[Object.assign({a2:[100,112],ft2:20},PUA),Object.assign({},PUA,{a:[100,112],a2:[43.8,116],ft2:20})],pr:G},
+ run:{fr:[{p:[80,70],t:170,a:[102,114],a2:[50,102],w:[70,58],w2:[100,54],ft:80,ft2:-20},{p:[80,70],t:170,a:[50,102],a2:[102,114],w:[100,54],w2:[70,58],ft:-20,ft2:80}],pr:G},
+ hang:{fr:[{p:[80,78],t:180,w:[86,6],a:[80,124]}],pr:['bar']},
+ dipstretch:{fr:[{p:[78,86],t:160,w:[84,62],a:[62,116]}],pr:['pbars62']},
+ disloc:{fr:[st({w:[104,64]}),st({w:[80,-1]}),st({w:[50,62]})],seq:[0,1,2,1],pr:G},
+ hamstr:{fr:[{p:[90,116],t:-88,a:[104,72],a2:[136,118],w:[86,90],ft:180,ft2:180},{p:[90,116],t:-88,a:[92,70],a2:[136,118],w:[84,88],ft:180,ft2:180}],pr:G,band:[['a','w']]},
+ pigeon:{fr:[{p:[76,114],t:150,a:[80,121],a2:[30,118],ft:80,ft2:-90,w:[98,116]},{p:[76,114],t:105,a:[80,121],a2:[30,118],ft:80,ft2:-90,w:[134,119]}],pr:G},
+ catcow:{fr:[{p:[74,95],t:111.2,w:[107.6,119],a:[51,119],hd:-55,ft:-100},{p:[74,95],t:111.2,w:[107.6,119],a:[51,119],hd:40,ft:-100}],pr:G}
+};
+const EXTPL={pushups:'pushup',widepu:'pushup',diamond:'pushup',declinepu:'decline',dips:'dips',tricepdips:'tdips',kbfloor:'floorpress',bandpress:'bpress',bandfly:'bfly',pullups:'pullup',widepull:'pullup',chinups:'pullup',invrow:'invrow',kbrow:'kbrow',bandrow:'brow',bandpulldown:'bpull',superman:'superman',squat:'squat',goblet:'goblet',kbdl:'kbdl',bulgarian:'bulgarian',lunges:'lunge',pistol:'pistol',glute:'glute',bandwalk:'bwalk',kbpress:'kbpress',pike:'pike',wallhs:'wallhs',halo:'halo',facepull:'facepull',bandlat:'blat',pullapart:'apart',kbcurl:'kbcurl',bandcurl:'bcurl',bandext:'bext',plank:'plank',sideplank:'sideplank',hlr:'hlr',lsit:'lsit',hollow:'hollow',tgu:'tgu',windmill:'windmill',pallof:'pallof',swings:'swing',snatch:'snatch',burpee:'burpee',jumpsquat:'jumpsq',climbers:'climbers',run:'run',hang:'hang',dipstretch:'dipstretch',dislocates:'disloc',hamstr:'hamstr',pigeon:'pigeon',catcow:'catcow'};
+
+const DEG=Math.PI/180;
+const dv=t=>[Math.sin(t*DEG),Math.cos(t*DEG)];
+function ik(R,T,L1,L2,s){
+  const dx=T[0]-R[0],dy=T[1]-R[1],d=Math.hypot(dx,dy)||0.001,a=Math.atan2(dy,dx);
+  const dc=Math.max(Math.abs(L1-L2)+0.01,Math.min(L1+L2-0.01,d));
+  const al=Math.acos(Math.max(-1,Math.min(1,(L1*L1+dc*dc-L2*L2)/(2*L1*dc))));
+  const J=[R[0]+L1*Math.cos(a+s*al),R[1]+L1*Math.sin(a+s*al)];
+  const ex=T[0]-J[0],ey=T[1]-J[1],ed=Math.hypot(ex,ey)||0.001;
+  return [J,[J[0]+ex/ed*L2,J[1]+ey/ed*L2]];
+}
+function lerpPose(A,B,u){
+  const o={};
+  Object.keys(A).forEach(k=>{
+    const x=A[k],y=B[k]===undefined?x:B[k];
+    o[k]=Array.isArray(x)?[x[0]+(y[0]-x[0])*u,x[1]+(y[1]-x[1])*u]:x+(y-x)*u;
+  });
+  return o;
+}
+const f1=n=>Math.round(n*10)/10;
+const ln=(a,b,c)=>'<line x1="'+f1(a[0])+'" y1="'+f1(a[1])+'" x2="'+f1(b[0])+'" y2="'+f1(b[1])+'" class="'+c+'"/>';
+function propSvg(k){
+  if(k==='ground')return '<line x1="-4" y1="122" x2="164" y2="122" class="gnd"/>';
+  if(k==='bar')return '<line x1="48" y1="6" x2="124" y2="6" class="eq"/><line x1="48" y1="-12" x2="48" y2="6" class="eq thin"/><line x1="124" y1="-12" x2="124" y2="6" class="eq thin"/>';
+  if(k.indexOf('pbars')===0){const y=+k.slice(5);return '<line x1="-4" y1="122" x2="164" y2="122" class="gnd"/><line x1="54" y1="'+y+'" x2="118" y2="'+y+'" class="eq"/><line x1="60" y1="'+y+'" x2="60" y2="122" class="eq thin"/><line x1="112" y1="'+y+'" x2="112" y2="122" class="eq thin"/>';}
+  if(k==='lowbar')return '<line x1="96" y1="70" x2="148" y2="70" class="eq"/><line x1="144" y1="70" x2="144" y2="122" class="eq thin"/>';
+  if(k==='box')return '<rect x="16" y="99" width="40" height="23" rx="2" class="box"/>';
+  if(k==='wall')return '<line x1="42" y1="-14" x2="42" y2="122" class="eq"/>';
+  if(k==='postL')return '<line x1="20" y1="24" x2="20" y2="122" class="eq thin"/>';
+  if(k==='postR')return '<line x1="150" y1="12" x2="150" y2="122" class="eq thin"/>';
+  return '';
+}
+function figureSvg(tpl,P){
+  const front=tpl.v==='f',d=dv(P.t),S=[P.p[0]+d[0]*36,P.p[1]+d[1]*36];
+  const hv=dv(P.t+(P.hd||0)),H=[S[0]+hv[0]*11,S[1]+hv[1]*11];
+  const pp=[-d[1],d[0]];
+  const s1=front?[S[0]-12*pp[0],S[1]-12*pp[1]]:S,s2=front?[S[0]+12*pp[0],S[1]+12*pp[1]]:S;
+  const p1=front?[P.p[0]-7*pp[0],P.p[1]-7*pp[1]]:P.p,p2=front?[P.p[0]+7*pp[0],P.p[1]+7*pp[1]]:P.p;
+  const eb=tpl.eb!=null?tpl.eb:1,eb2=tpl.eb2!=null?tpl.eb2:(front?-1:1),kb=tpl.kb!=null?tpl.kb:(front?1:-1),kb2=tpl.kb2!=null?tpl.kb2:-1;
+  const J={};
+  if(P.w){const r=ik(s1,P.w,19,18,eb);J.e=r[0];J.w=r[1];}
+  if(P.w2){const r=ik(s2,P.w2,19,18,eb2);J.e2=r[0];J.w2=r[1];}
+  if(P.a){const r=ik(p1,P.a,24,23,kb);J.k=r[0];J.a=r[1];}
+  if(P.a2){const r=ik(p2,P.a2,24,23,kb2);J.k2=r[0];J.a2=r[1];}
+  const toe=(A,ft,dflt)=>{const v=dv(ft!=null?ft:dflt);const L=front?5:8;return [A[0]+v[0]*L,A[1]+v[1]*L];};
+  const far=front?'fg':'fg far';
+  let back='',out='';
+  (tpl.pr||[]).forEach(k=>back+=propSvg(k));
+  (tpl.band||[]).forEach(b=>{
+    const pt=x=>typeof x==='string'?J[x]:x;const A=pt(b[0]),B=pt(b[1]);
+    if(A&&B)back+=ln(A,B,'band');
+  });
+  if(J.a2)out+=ln(p2,J.k2,far)+ln(J.k2,J.a2,far)+ln(J.a2,toe(J.a2,P.ft2,front?95:80),far);
+  if(J.w2&&!front)out+=ln(s2,J.e2,far)+ln(J.e2,J.w2,far);
+  out+=ln(P.p,S,'fg');
+  if(front)out+=ln(s1,s2,'fg')+ln(p1,p2,'fg');
+  out+='<circle cx="'+f1(H[0])+'" cy="'+f1(H[1])+'" r="6.5" class="hd"/>';
+  if(J.a)out+=ln(p1,J.k,'fg')+ln(J.k,J.a,'fg')+ln(J.a,toe(J.a,P.ft,front?-95:80),'fg');
+  if(J.w2&&front)out+=ln(s2,J.e2,'fg')+ln(J.e2,J.w2,'fg');
+  if(J.w)out+=ln(s1,J.e,'fg')+ln(J.e,J.w,'fg');
+  if(tpl.bell&&J[tpl.bell.at]){
+    const W=J[tpl.bell.at],o=P.ko||tpl.bell.off,c=[W[0]+o[0],W[1]+o[1]];
+    out+=ln(W,c,'eq thin')+'<circle cx="'+f1(c[0])+'" cy="'+f1(c[1])+'" r="5.5" class="kb"/>';
+  }
+  return back+out;
+}
+function poseAt(tpl,ms){
+  const fr=tpl.fr;if(fr.length===1)return fr[0];
+  const seq=tpl.seq||[0,1],HOLD=450,MOVE=850,SEG=HOLD+MOVE;
+  const tt=ms%(seq.length*SEG),i=Math.floor(tt/SEG),loc=tt-i*SEG;
+  const A=fr[seq[i]],B=fr[seq[(i+1)%seq.length]];
+  if(loc<HOLD)return A;
+  const u=(loc-HOLD)/MOVE,e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+  return lerpPose(A,B,e);
+}
+const RM=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let demoRAF=null,demoLast=0;
+function drawDemos(ts){
+  const els=document.querySelectorAll('svg[data-demo]');
+  if(!els.length){demoRAF=null;return;}
+  if(!ts||ts-demoLast>33){
+    demoLast=ts||0;
+    els.forEach(el=>{
+      const tpl=TPL[el.getAttribute('data-demo')];if(!tpl)return;
+      const P=RM?tpl.fr[tpl.fr.length>1?1:0]:poseAt(tpl,ts||0);
+      el.innerHTML=figureSvg(tpl,P);
+    });
+  }
+  demoRAF=RM?null:requestAnimationFrame(drawDemos);
+}
+function startDemos(){if(demoRAF)cancelAnimationFrame(demoRAF);demoRAF=null;drawDemos(performance.now());}
+function techBlock(ex){
+  const tk=EXTPL[ex.id],tx=TECH[ex.id];
+  if(!tk||!tx)return '<div class="tech tech-none"><p class="empty">Для своих упражнений схемы техники нет.</p></div>';
+  return '<div class="tech"><figure class="demo"><svg data-demo="'+tk+'" viewBox="-4 -14 168 140" role="img" aria-label="Схема выполнения: '+esc(ex.name)+'"></svg><figcaption>'+(TPL[tk].fr.length>1?'Схема движения':'Положение')+' · '+esc(ex.eq)+'</figcaption></figure>'+
+    '<div class="cues"><ol>'+tx.slice(0,3).map(c=>'<li>'+esc(c)+'</li>').join('')+'</ol><p class="warn"><b>Частая ошибка:</b> '+esc(tx[3])+'</p></div></div>';
+}
+
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseKey=k=>{const a=k.split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);};
+const addDays=(k,n)=>{const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d);};
+const todayKey=()=>keyOf(new Date());
+const mondayOf=k=>{const d=parseKey(k);d.setDate(d.getDate()-((d.getDay()+6)%7));return keyOf(d);};
+const MON_G=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MON_S=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const WD=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const num=x=>Number(x).toLocaleString('ru-RU',{maximumFractionDigits:2});
+function plural(n,f){const a=Math.abs(n)%100,b=a%10;if(a>10&&a<20)return f[2];if(b>1&&b<5)return f[1];if(b===1)return f[0];return f[2];}
+const PODH=['подход','подхода','подходов'];
+const UPR=['упражнение','упражнения','упражнений'];
+function dur(s){s=Math.round(s);if(s<60)return s+' с';const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;return h?h+':'+pad(m)+':'+pad(r):m+':'+pad(r);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+const dirStyle=dir=>{const d=DIR[dir]||DIRS[0];return '--c:var(--p-'+d.c+');--dir:var(--p-'+d.c+');--on-dir:'+(d.c==='yellow'?'var(--on-yellow)':'var(--on-plate)');};
+function dateLong(k){const d=parseKey(k);return d.getDate()+' '+MON_G[d.getMonth()];}
+
+/* ---------- state ---------- */
+const LS='wt-log-v1';
+const S={mode:'local',days:{},config:{custom:[],hidden:[]},col:null,unsub:null,pending:{},writing:{}};
+const UI={dir:lsGet('wt-dir')||'chest',date:todayKey(),tab:'day',open:null,addOpen:false,armed:null,tech:null};
+if(!DIR[UI.dir])UI.dir='chest';
+const drafts={};
+
+function normConfig(){
+  if(!S.config||typeof S.config!=='object')S.config={};
+  if(!Array.isArray(S.config.custom))S.config.custom=[];
+  if(!Array.isArray(S.config.hidden))S.config.hidden=[];
+}
+function allEx(){
+  const list=BASE.map(b=>({dir:b[0],id:b[1],name:b[2],kind:b[3],eq:b[4],def:b[5],tu:b[6]||(b[3]==='dist'?'m':'s')}));
+  S.config.custom.forEach(c=>list.push({dir:c.dir,id:c.id,name:c.name,kind:c.kind,eq:'своё',def:KDEF[c.kind],tu:c.tu||'s',custom:true}));
+  return list;
+}
+function catalog(dir){const h=S.config.hidden;return allEx().filter(e=>e.dir===dir&&h.indexOf(e.id)<0);}
+function day(k){return S.days[k]||null;}
+function daySets(k){const d=day(k);return (d&&d.sets)||[];}
+function dayPlan(k){const d=day(k);return (d&&d.plan)||[];}
+function ensureDay(k){
+  if(!S.days[k])S.days[k]={date:k,sets:[],plan:[]};
+  if(!S.days[k].sets)S.days[k].sets=[];
+  if(!S.days[k].plan)S.days[k].plan=[];
+  return S.days[k];
+}
+function getEx(id){
+  const e=allEx().find(x=>x.id===id);if(e)return e;
+  const p=dayPlan(UI.date).find(x=>x.ex===id);
+  if(p)return {id:id,dir:p.dir,name:p.n,kind:p.k,tu:p.tu||'s',eq:'удалено из списка',def:KDEF[p.k]||KDEF.reps};
+  const s=daySets(UI.date).find(x=>x.ex===id);
+  if(s)return {id:id,dir:s.dir,name:s.n,kind:s.k,tu:s.k==='dist'?'m':'s',eq:'удалено из списка',def:KDEF[s.k]||KDEF.reps};
+  return null;
+}
+function lastFor(id,before){
+  const keys=Object.keys(S.days).sort().reverse();
+  for(const k of keys){if(before&&k>=before)continue;const s=daySets(k);for(let i=s.length-1;i>=0;i--)if(s[i].ex===id)return s[i];}
+  return null;
+}
+function draftFor(ex){
+  if(!drafts[ex.id]){
+    const l=lastFor(ex.id),d=Object.assign({},ex.def);
+    if(l)['w','r','t','d'].forEach(f=>{if(l[f]!=null&&f in d)d[f]=l[f];});
+    drafts[ex.id]=d;
+  }
+  return drafts[ex.id];
+}
+function fmtSet(s){
+  switch(s.k){
+    case 'wr':return (s.w?num(s.w)+' × ':'× ')+s.r;
+    case 'reps':return String(s.r);
+    case 'time':return dur(s.t);
+    case 'dist':return num(s.d)+' км · '+dur(s.t);
+  }
+  return '';
+}
+function fmtDraft(ex){return fmtSet(Object.assign({k:ex.kind},draftFor(ex)));}
+// exercises shown for a day: the plan first, then anything logged that is not in the plan
+function dayItems(k){
+  const plan=dayPlan(k),items=[],seen={};
+  plan.forEach(p=>{const ex=getEx(p.ex);if(ex&&!seen[ex.id]){seen[ex.id]=1;items.push({ex:ex,goal:p.goal||0,planned:true});}});
+  daySets(k).forEach(s=>{if(!seen[s.ex]){seen[s.ex]=1;const ex=getEx(s.ex);if(ex)items.push({ex:ex,goal:0,planned:false});}});
+  return items;
+}
+
+/* ---------- persistence ---------- */
+function loadLocal(){
+  const raw=lsGet(LS);if(!raw)return;
+  try{const o=JSON.parse(raw);S.days=o.days||{};S.config=o.config||{};}catch(e){}
+  normConfig();
+}
+function saveLocal(){lsSet(LS,JSON.stringify({days:S.days,config:S.config}));}
+function persistDay(k){
+  const d=S.days[k];
+  const keep=d&&((d.sets&&d.sets.length)||(d.plan&&d.plan.length));
+  if(!keep)delete S.days[k];
+  if(S.mode==='db')queue('d-'+k,keep?d:null);else saveLocal();
+}
+function persistConfig(){if(S.mode==='db')queue('config',S.config);else saveLocal();}
+function queue(id,body){S.pending[id]=body===null?null:clone(body);if(!S.writing[id])flush(id);}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function flush(id){
+  S.writing[id]=true;
+  while(id in S.pending&&S.mode==='db'){
+    const body=S.pending[id];delete S.pending[id];
+    let tries=0;
+    for(;;){
+      try{const ref=S.col.doc(id);if(body===null)await ref.delete();else await ref.set(body);break;}
+      catch(e){
+        const code=e&&e.code;
+        if(code==='unavailable'&&tries<1){tries++;await sleep(500+Math.random()*700);continue;}
+        if(code==='quota_exceeded'){toast('Хранилище заполнено: удалите старые записи, чтобы добавить новые.');break;}
+        goLocal('Не удалось сохранить в аккаунт. Записи пока сохраняются только в этом браузере.');
+        break;
+      }
+    }
+  }
+  S.writing[id]=false;
+}
+function goLocal(msg){
+  if(S.unsub){try{S.unsub();}catch(e){}S.unsub=null;}
+  S.mode='local';S.pending={};saveLocal();setStatus();
+  if(msg)toast(msg);
+}
+function setStatus(){
+  const t=S.mode==='db'?'Записи сохраняются в вашем аккаунте и видны на всех устройствах':'Записи хранятся на этом телефоне';
+  $('status').textContent=t;
+  const d=$('syncDot');d.title=t;d.className='logo'+(S.mode==='db'?' ok':'');
+}
+async function connect(){
+  if(!window.claude||typeof window.claude.use!=='function'){setStatus();return;}
+  let db=null,user=null,id=null;
+  try{[db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);}catch(e){}
+  if(db&&user){try{id=await user.id();}catch(e){}}
+  if(!db||!id){setStatus();return;}
+  try{S.col=db.collection('data/users/'+id);}catch(e){setStatus();return;}
+  S.unsub=S.col.onSnapshot(snap=>{
+    const first=S.mode!=='db';
+    if(first&&snap.empty&&Object.keys(S.days).length&&!lsGet('wt-migrated')){
+      S.mode='db';lsSet('wt-migrated','1');
+      Object.keys(S.days).forEach(k=>queue('d-'+k,S.days[k]));
+      queue('config',S.config);setStatus();render();return;
+    }
+    const nd={};let cfg=null;
+    snap.docs.forEach(doc=>{
+      const data=doc.data();if(!data)return;
+      if(doc.id==='config')cfg=clone(data);
+      else if(doc.id.indexOf('d-')===0)nd[doc.id.slice(2)]=clone(data);
+    });
+    const busy=Object.keys(S.pending).concat(Object.keys(S.writing).filter(k=>S.writing[k]));
+    busy.forEach(bid=>{
+      if(bid==='config')cfg=S.config;
+      else if(bid.indexOf('d-')===0){const k=bid.slice(2);if(S.days[k])nd[k]=S.days[k];else delete nd[k];}
+    });
+    S.mode='db';S.days=nd;S.config=cfg||{};normConfig();
+    if(first)UI.tab=defaultTab(UI.date);
+    setStatus();render();
+  },err=>{goLocal(err&&err.code==='revoked'?null:'Нет связи с аккаунтом. Записи сохраняются в этом браузере.');});
+}
+
+/* ---------- actions ---------- */
+function defaultTab(k){return (dayPlan(k).length||daySets(k).length)?'day':'build';}
+function setDate(k){UI.date=k;UI.open=null;UI.armed=null;UI.addOpen=false;UI.tab=defaultTab(k);render();}
+function logSet(exId){
+  const ex=getEx(exId);if(!ex)return;
+  const d=draftFor(ex),s={id:uid(),ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,at:Date.now()};
+  if(ex.kind==='wr'){if(!(d.r>0))return toast('Укажите количество повторов.');s.w=d.w||0;s.r=d.r;}
+  if(ex.kind==='reps'){if(!(d.r>0))return toast('Укажите количество повторов.');s.r=d.r;}
+  if(ex.kind==='time'){if(!(d.t>0))return toast('Укажите время.');s.t=d.t;}
+  if(ex.kind==='dist'){if(!(d.d>0))return toast('Укажите дистанцию.');s.d=d.d;s.t=d.t||0;}
+  const k=UI.date;
+  ensureDay(k).sets.push(s);
+  persistDay(k);render();
+  const n=daySets(k).filter(x=>x.ex===ex.id).length;
+  const p=dayPlan(k).find(x=>x.ex===ex.id);
+  toast(ex.name+' — подход '+n+(p&&p.goal?' из '+p.goal:'')+': '+fmtSet(s),()=>removeSet(k,s.id));
+}
+function removeSet(k,id){
+  if(!S.days[k])return;
+  S.days[k].sets=daySets(k).filter(s=>s.id!==id);
+  persistDay(k);render();
+}
+function defGoal(ex){return ex.kind==='dist'?1:3;}
+function togglePick(id){
+  const ex=getEx(id);if(!ex)return;
+  const d=ensureDay(UI.date),i=d.plan.findIndex(p=>p.ex===id);
+  if(i>=0)d.plan.splice(i,1);
+  else d.plan.push({ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,tu:ex.tu,goal:defGoal(ex)});
+  persistDay(UI.date);render();
+}
+function unplan(id){
+  const d=day(UI.date);if(!d||!d.plan)return;
+  d.plan=d.plan.filter(p=>p.ex!==id);
+  if(UI.open===id&&!daySets(UI.date).some(s=>s.ex===id))UI.open=null;
+  persistDay(UI.date);render();
+}
+function changeGoal(id,delta){
+  const p=dayPlan(UI.date).find(x=>x.ex===id);if(!p)return;
+  p.goal=Math.max(1,Math.min(20,(p.goal||1)+delta));
+  persistDay(UI.date);render();
+}
+function prevPlanDay(){
+  const keys=Object.keys(S.days).filter(k=>k<UI.date&&dayPlan(k).length).sort();
+  return keys.length?keys[keys.length-1]:null;
+}
+function copyPlan(from){
+  const d=ensureDay(UI.date);let added=0;
+  dayPlan(from).forEach(p=>{if(!d.plan.some(x=>x.ex===p.ex)){d.plan.push(clone(p));added++;}});
+  persistDay(UI.date);render();
+  toast(added?'Добавлено '+added+' '+plural(added,UPR)+' из тренировки '+dateLong(from)+'.':'Все упражнения оттуда уже в тренировке.');
+}
+function addCustom(){
+  const name=$('newName').value.trim();
+  if(!name){$('newName').focus();return;}
+  const kv=$('newKind').value,kind=kv==='timem'?'time':kv;
+  const c={id:'c-'+uid(),dir:UI.dir,name:name.slice(0,80),kind:kind,tu:kv==='timem'||kind==='dist'?'m':'s'};
+  S.config.custom=S.config.custom.concat(c);
+  UI.addOpen=false;
+  persistConfig();
+  togglePick(c.id); // a new exercise goes straight into the day's workout
+  toast('«'+c.name+'» добавлено в список и в тренировку.');
+}
+function deleteEx(id){
+  const ex=allEx().find(x=>x.id===id);if(!ex)return;
+  if(ex.custom)S.config.custom=S.config.custom.filter(c=>c.id!==id);
+  else if(S.config.hidden.indexOf(id)<0)S.config.hidden=S.config.hidden.concat(id);
+  UI.armed=null;persistConfig();
+  const d=day(UI.date);
+  if(d&&d.plan&&d.plan.some(p=>p.ex===id)&&!daySets(UI.date).some(s=>s.ex===id)){d.plan=d.plan.filter(p=>p.ex!==id);persistDay(UI.date);}
+  render();
+  if(ex.custom)toast('«'+ex.name+'» удалено.');
+  else toast('«'+ex.name+'» убрано из списка.',()=>{S.config.hidden=S.config.hidden.filter(h=>h!==id);persistConfig();render();});
+}
+function restoreDir(dir){
+  const ids=BASE.filter(b=>b[0]===dir).map(b=>b[1]);
+  S.config.hidden=S.config.hidden.filter(h=>ids.indexOf(h)<0);
+  persistConfig();render();
+}
+
+/* ---------- fields ---------- */
+function fieldsOf(ex){
+  if(ex.kind==='wr')return[['w','Вес, кг',2],['r','Повторы',1]];
+  if(ex.kind==='reps')return[['r','Повторы',1]];
+  if(ex.kind==='time')return ex.tu==='m'?[['t','Время, мин',60]]:[['t','Время, сек',15]];
+  return[['d','Дистанция, км',0.5],['t','Время, мин',60]];
+}
+function shown(ex,f){const v=draftFor(ex)[f]||0;return String(f==='t'&&ex.tu==='m'?Math.round(v/60*10)/10:v).replace('.',',');}
+function setField(ex,f,raw){
+  let v=parseFloat(String(raw).replace(',','.'));if(!isFinite(v)||v<0)v=0;
+  if(f==='t'&&ex.tu==='m')v=Math.round(v*60);
+  if(f==='r')v=Math.round(v);
+  draftFor(ex)[f]=Math.round(v*100)/100;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const d=DIR[UI.dir],root=document.documentElement.style;
+  root.setProperty('--dir','var(--p-'+d.c+')');
+  root.setProperty('--on-dir',d.c==='yellow'?'var(--on-yellow)':'var(--on-plate)');
+  renderHeader();renderStats();renderTabs();renderMain();renderDayLog();renderWeek();renderHeat();
+}
+function renderHeader(){
+  const t=todayKey(),k=UI.date,dt=parseKey(k);
+  $('dayRel').textContent=k===t?'Сегодня':k===addDays(t,-1)?'Вчера':k===addDays(t,1)?'Завтра':WD[dt.getDay()];
+  $('dayDate').textContent=dateLong(k)+(dt.getFullYear()!==new Date().getFullYear()?' '+dt.getFullYear():'');
+  $('nextDay').disabled=k>=addDays(t,60);
+  $('todayBtn').hidden=k===t;
+}
+function streak(){
+  let k=todayKey();if(!daySets(k).length)k=addDays(k,-1);
+  let n=0;while(daySets(k).length){n++;k=addDays(k,-1);}
+  return n;
+}
+function renderStats(){
+  const s=daySets(UI.date);
+  let reps=0,ton=0,time=0,km=0;
+  s.forEach(x=>{if(x.r)reps+=x.r;if(x.k==='wr')ton+=(x.w||0)*x.r;if(x.t)time+=x.t;if(x.d)km+=x.d;});
+  const st=streak();
+  let html=
+    '<div class="stat"><div class="v">'+s.length+'</div><div class="l">'+plural(s.length,PODH)+'</div></div>'+
+    '<div class="stat"><div class="v">'+num(reps)+'</div><div class="l">повторов</div></div>'+
+    '<div class="stat"><div class="v">'+num(Math.round(ton))+'<small>кг</small></div><div class="l">поднято с гирей</div></div>'+
+    '<div class="stat"><div class="v">'+st+'</div><div class="l">'+plural(st,['день','дня','дней'])+' подряд</div></div>';
+  const extra=[];
+  const plan=dayPlan(UI.date);
+  if(plan.length){
+    const done=plan.filter(p=>p.goal&&s.filter(x=>x.ex===p.ex).length>=p.goal).length;
+    const sumGoal=plan.reduce((a,p)=>a+(p.goal||0),0);
+    const doneSets=plan.reduce((a,p)=>a+Math.min(p.goal||0,s.filter(x=>x.ex===p.ex).length),0);
+    extra.push('Тренировка: '+done+' из '+plan.length+' '+plural(plan.length,UPR)+' выполнено, подходов '+doneSets+' из '+sumGoal);
+  }
+  if(time)extra.push('время: '+dur(time));
+  if(km)extra.push('дистанция: '+num(km)+' км');
+  if(extra.length)html+='<div class="substat">'+extra.join(' · ')+'</div>';
+  $('stats').innerHTML=html;
+}
+function renderTabs(){
+  const tabs=['day','build','stats'];
+  tabs.forEach(t=>$('tab-'+t).setAttribute('aria-selected',String(UI.tab===t)));
+  $('tabbar').style.setProperty('--ti',String(Math.max(0,tabs.indexOf(UI.tab))));
+  const n=dayItems(UI.date).length,tc=$('tabCount');
+  tc.textContent=n?String(n):'';tc.hidden=!n;
+  $('mainBody').hidden=UI.tab==='stats';
+  $('statsView').hidden=UI.tab!=='stats';
+}
+function renderMain(){
+  $('mainBody').innerHTML=UI.tab==='day'?dayView():UI.tab==='build'?buildView():'';
+  if(UI.focusNew){UI.focusNew=false;const i=$('newName');if(i)i.focus();}
+  startDemos();
+}
+const PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+function exRow(it){
+  const ex=it.ex,s=daySets(UI.date),mine=s.filter(x=>x.ex===ex.id),n=mine.length,open=UI.open===ex.id;
+  const done=it.goal&&n>=it.goal;
+  let row='<div class="ex'+(open?' open':'')+(done?' done':'')+'" style="'+dirStyle(ex.dir)+'">'+
+    '<button class="ex-main" data-open="'+ex.id+'" aria-expanded="'+open+'"><span class="ex-name">'+esc(ex.name)+'<span class="chev">▾</span></span><span class="ex-meta">'+esc(ex.eq)+' · подход <span class="nextv" id="q-'+ex.id+'">'+esc(fmtDraft(ex))+'</span></span></button>'+
+    '<div class="ex-count" aria-label="'+n+(it.goal?' из '+it.goal:'')+' '+plural(n,PODH)+'"><b class="'+(n?'':'zero')+'">'+n+'</b>'+(it.goal?'<small>/'+it.goal+'</small>':'')+'</div>'+
+    '<button class="quick tint press" data-quick="'+ex.id+'" aria-label="Отметить подход: '+esc(ex.name)+'">'+PLUS+'</button>';
+  if(open){
+    row+='<div class="panel"><div class="fields">'+fieldsOf(ex).map(f=>
+      '<div class="field"><label for="in-'+ex.id+'-'+f[0]+'">'+f[1]+'</label><div class="stepper">'+
+      '<button data-step="'+ex.id+'|'+f[0]+'|-1" aria-label="Уменьшить">−</button>'+
+      '<input id="in-'+ex.id+'-'+f[0]+'" class="num" inputmode="decimal" autocomplete="off" data-ex="'+ex.id+'" data-f="'+f[0]+'" value="'+shown(ex,f[0])+'">'+
+      '<button data-step="'+ex.id+'|'+f[0]+'|1" aria-label="Увеличить">+</button></div></div>').join('')+'</div>'+
+      '<div class="panel-actions"><button class="log tint press" data-log="'+ex.id+'">Отметить подход</button>'+
+      (it.planned?'<span class="goalnote">Цель: '+it.goal+' '+plural(it.goal,PODH)+'</span><button class="rm" data-unplan="'+ex.id+'">Убрать из тренировки</button>':'')+'</div>'+
+      (n?'<div class="chips">'+mine.map((x,i)=>'<span class="chip"><i>'+(i+1)+'</i>'+esc(fmtSet(x))+'<button data-del="'+x.id+'" aria-label="Удалить подход '+(i+1)+'">×</button></span>').join('')+'</div>':'')+
+      techBlock(ex)+'</div>';
+  }
+  return row+'</div>';
+}
+function heroCard(){
+  const s=daySets(UI.date),plan=dayPlan(UI.date);
+  const cnt=id=>s.filter(x=>x.ex===id).length;
+  const goalSum=plan.reduce((a,p)=>a+(p.goal||0),0);
+  const doneSets=plan.reduce((a,p)=>a+Math.min(p.goal||0,cnt(p.ex)),0);
+  const doneEx=plan.filter(p=>p.goal&&cnt(p.ex)>=p.goal).length;
+  const pct=goalSum?Math.round(doneSets/goalSum*100):0;
+  return '<section class="hero glass"><div class="hero-top"><div><div class="hero-n">'+s.length+'</div><div class="hero-l">'+plural(s.length,PODH)+' отмечено</div></div>'+
+    (plan.length?'<div class="ring" style="--pct:'+pct+'" role="img" aria-label="План выполнен на '+pct+'%"><span>'+pct+'%</span></div>':'')+'</div>'+
+    (plan.length?'<div class="hero-sub">'+doneEx+' из '+plan.length+' '+plural(plan.length,UPR)+' готово · '+doneSets+' из '+goalSum+' подходов по плану</div>':'')+'</section>';
+}
+function dayView(){
+  const items=dayItems(UI.date);
+  if(!items.length){
+    const prev=prevPlanDay();
+    return '<div class="emptycard glass"><h3>Тренировка не собрана</h3><p class="empty">Выберите упражнения на '+(UI.date===todayKey()?'сегодня':dateLong(UI.date))+' и задайте число подходов. Потом отмечайте каждый подход кнопкой «+».</p>'+
+      '<div class="toolrow"><button class="log tint press" data-tab="build">Собрать тренировку</button>'+
+      (prev?'<button class="ghost glass press" data-copy="'+prev+'">Повторить от '+dateLong(prev)+'</button>':'')+'</div></div>';
+  }
+  const byDir={},s=daySets(UI.date);items.forEach(it=>{(byDir[it.ex.dir]=byDir[it.ex.dir]||[]).push(it);});
+  let html=heroCard();
+  DIRS.forEach(d=>{
+    const g=byDir[d.id];if(!g)return;
+    const done=s.filter(x=>x.dir===d.id).length,goal=g.reduce((a,it)=>a+(it.goal||0),0);
+    html+='<section class="group"><h3 class="glabel"><i class="dot" style="--c:var(--p-'+d.c+')"></i>'+d.name+'<span class="n">'+done+(goal?' / '+goal:'')+'</span></h3><div class="exlist glass">'+g.map(exRow).join('')+'</div></section>';
+  });
+  const other=Object.keys(byDir).filter(k=>!DIR[k]);
+  if(other.length)html+='<div class="exlist glass">'+other.map(k=>byDir[k].map(exRow).join('')).join('')+'</div>';
+  html+='<button class="addmore glass press" data-tab="build">+ Добавить или убрать упражнения</button>';
+  return html;
+}
+function buildView(){
+  const plan=dayPlan(UI.date),inPlan={};plan.forEach(p=>inPlan[p.ex]=p);
+  let html='<h2 class="sec">Направление</h2><div class="chipscroll" role="group" aria-label="Направления">'+DIRS.map(d=>{
+    const n=plan.filter(p=>p.dir===d.id).length;
+    return '<button class="dir glass press" data-dir="'+d.id+'" aria-pressed="'+(d.id===UI.dir)+'" style="--c:var(--p-'+d.c+');--on-c:'+(d.c==='yellow'?'var(--on-yellow)':'var(--on-plate)')+'"><span class="disc"></span>'+d.name+(n?'<span class="badge">'+n+'</span>':'')+'</button>';
+  }).join('')+'</div>';
+  const prev=prevPlanDay();
+  if(prev)html+='<div class="toolrow"><button class="ghost glass press" data-copy="'+prev+'">Повторить тренировку от '+dateLong(prev)+' · '+dayPlan(prev).length+' упр.</button></div>';
+  const list=catalog(UI.dir);
+  html+='<div class="exlist glass">'+(list.length?'':'<p class="empty" style="padding:16px">В этом направлении не осталось упражнений. Добавьте своё или верните удалённые.</p>')+list.map(ex=>{
+    const p=inPlan[ex.id],armed=UI.armed===ex.id,tOpen=UI.tech===ex.id;
+    return '<div class="bx'+(p?' in':'')+'">'+
+      '<button class="pick" data-pick="'+ex.id+'" aria-pressed="'+!!p+'"><span class="chk">✓</span><span class="ex-name">'+esc(ex.name)+'</span><span class="ex-meta">'+esc(ex.eq)+' · '+KLABEL[ex.kind]+'</span></button>'+
+      '<button class="techbtn press" data-tech="'+ex.id+'" aria-expanded="'+tOpen+'" aria-label="Техника: '+esc(ex.name)+'">'+(tOpen?'Скрыть':'Техника')+'</button>'+
+      '<button class="xdel'+(armed?' armed':'')+'" data-xdel="'+ex.id+'" aria-label="Удалить упражнение «'+esc(ex.name)+'» из списка">'+(armed?'Удалить?':'×')+'</button>'+
+      (p?'<div class="goal"><button data-goal="'+ex.id+'|-1" aria-label="Меньше подходов">−</button><span>'+p.goal+' '+plural(p.goal,PODH)+'</span><button data-goal="'+ex.id+'|1" aria-label="Больше подходов">+</button></div>':'')+
+      (tOpen?'<div class="bx-tech">'+techBlock(ex)+'</div>':'')+
+      '</div>';
+  }).join('');
+  html+='<div class="addrow">'+(UI.addOpen?
+    '<form class="addform" id="addForm"><input id="newName" placeholder="Название упражнения" maxlength="80" aria-label="Название упражнения"><select id="newKind" aria-label="Что считать"><option value="reps">Повторы</option><option value="wr">Вес × повторы</option><option value="time">Время, сек</option><option value="timem">Время, мин</option><option value="dist">Дистанция и время</option></select><button class="log tint press" type="submit">Добавить</button><button class="ghost glass press" type="button" data-addex="0">Отмена</button></form>'
+    :'<button class="addbtn press" data-addex="1">+ Своё упражнение в «'+DIR[UI.dir].name+'»</button>')+'</div></div>';
+  const hiddenHere=BASE.filter(b=>b[0]===UI.dir&&S.config.hidden.indexOf(b[1])>=0).length;
+  if(hiddenHere)html+='<div class="toolrow"><button class="restore" data-restore="'+UI.dir+'">Удалено из списка: '+hiddenHere+' — вернуть</button></div>';
+  if(plan.length)html+='<button class="log tint press wide" data-tab="day">Готово — к тренировке · '+plan.length+' '+plural(plan.length,UPR)+'</button>';
+  return html;
+}
+function renderDayLog(){
+  const s=daySets(UI.date);
+  if(!s.length){$('daylog').innerHTML='<p class="empty">В этот день подходы ещё не отмечены.</p>';return;}
+  const groups=[],idx={};
+  s.forEach(x=>{if(!(x.ex in idx)){idx[x.ex]=groups.length;groups.push({x:x,sets:[]});}groups[idx[x.ex]].sets.push(x);});
+  $('daylog').innerHTML='<div style="display:grid;gap:10px">'+groups.map(g=>{
+    const d=DIR[g.x.dir]||DIRS[0];
+    return '<div class="grp"><div class="grp-h"><i class="dot" style="--c:var(--p-'+d.c+')"></i><span class="name">'+esc(g.x.n)+'</span><span class="n">'+g.sets.length+' '+plural(g.sets.length,PODH)+'</span></div><div class="chips">'+
+      g.sets.map((x,i)=>'<span class="chip"><i>'+(i+1)+'</i>'+esc(fmtSet(x))+'<button data-del="'+x.id+'" aria-label="Удалить подход">×</button></span>').join('')+'</div></div>';
+  }).join('')+'</div>';
+}
+function renderWeek(){
+  const mon=mondayOf(UI.date),sun=addDays(mon,6);
+  const a=parseKey(mon),b=parseKey(sun);
+  $('weekTitle').textContent='Неделя '+a.getDate()+(a.getMonth()!==b.getMonth()?' '+MON_S[a.getMonth()]:'')+'–'+b.getDate()+' '+MON_S[b.getMonth()];
+  const cnt={};DIRS.forEach(d=>cnt[d.id]=0);let total=0;
+  for(let i=0;i<7;i++)daySets(addDays(mon,i)).forEach(x=>{if(x.dir in cnt){cnt[x.dir]++;total++;}});
+  const max=Math.max(1,...Object.values(cnt));
+  $('weekbars').innerHTML='<div class="bars">'+DIRS.map(d=>{
+    const n=cnt[d.id];
+    return '<div class="bar'+(n?'':' none')+'" style="--c:var(--p-'+d.c+')"><span>'+d.name+'</span><span class="track"><span class="fill" style="display:block;width:'+(n/max*100)+'%"></span></span><span class="cnt">'+n+'</span></div>';
+  }).join('')+'</div><p class="cap" style="margin-top:10px">Всего за неделю: '+total+' '+plural(total,PODH)+'</p>';
+}
+function level(n){return n===0?0:n<=5?1:n<=12?2:n<=20?3:4;}
+function renderHeat(){
+  const t=todayKey(),start=addDays(mondayOf(t),-77);
+  let html='<div class="heat"><span></span>';
+  let prevM=-1;
+  for(let w=0;w<12;w++){
+    const d=parseKey(addDays(start,w*7)),m=d.getMonth();
+    html+='<span class="ml">'+(m!==prevM?MON_S[m]:'')+'</span>';prevM=m;
+  }
+  const wl=['пн','','ср','','пт','','вс'];
+  for(let r=0;r<7;r++){
+    html+='<span class="wd" style="grid-row:'+(r+2)+';grid-column:1">'+wl[r]+'</span>';
+    for(let w=0;w<12;w++){
+      const k=addDays(start,w*7+r),fut=k>t,n=daySets(k).length;
+      const lab=dateLong(k)+': '+n+' '+plural(n,PODH);
+      html+=fut?'<span class="cell fut" style="grid-row:'+(r+2)+';grid-column:'+(w+2)+'"></span>'
+        :'<button class="cell l'+level(n)+(k===UI.date?' sel':'')+'" style="grid-row:'+(r+2)+';grid-column:'+(w+2)+'" data-day="'+k+'" title="'+lab+'" aria-label="'+lab+'"></button>';
+    }
+  }
+  html+='</div><div class="legend" style="margin-top:10px">меньше<span class="cell"></span><span class="cell l1"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l4"></span>больше <span style="margin-left:auto">подходов в день</span></div>';
+  $('heat').innerHTML=html;
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null,undoFn=null;
+function toast(msg,undo){
+  $('toastText').textContent=msg;undoFn=undo||null;
+  $('toastUndo').hidden=!undo;$('toast').hidden=false;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').hidden=true;undoFn=null;},undo?5000:4000);
+}
+$('toastUndo').addEventListener('click',()=>{if(undoFn)undoFn();undoFn=null;$('toast').hidden=true;});
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const ds=b.dataset;
+  if(!ds.xdel&&UI.armed){UI.armed=null;if(UI.tab==='build'&&!ds.pick&&!ds.goal)renderMain();}
+  if(ds.tab){UI.tab=ds.tab;UI.open=null;UI.addOpen=false;render();window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(ds.dir){UI.dir=ds.dir;UI.addOpen=false;lsSet('wt-dir',ds.dir);render();return;}
+  if(ds.tech){UI.tech=UI.tech===ds.tech?null:ds.tech;renderMain();return;}
+  if(ds.pick){togglePick(ds.pick);return;}
+  if(ds.goal){const p=ds.goal.split('|');changeGoal(p[0],Number(p[1]));return;}
+  if(ds.xdel){if(UI.armed===ds.xdel)deleteEx(ds.xdel);else{UI.armed=ds.xdel;renderMain();}return;}
+  if(ds.restore){restoreDir(ds.restore);return;}
+  if(ds.copy){copyPlan(ds.copy);return;}
+  if(ds.unplan){unplan(ds.unplan);return;}
+  if(ds.open){UI.open=UI.open===ds.open?null:ds.open;renderMain();return;}
+  if(ds.quick){logSet(ds.quick);return;}
+  if(ds.log){logSet(ds.log);return;}
+  if(ds.step){
+    const p=ds.step.split('|'),ex=getEx(p[0]);if(!ex)return;
+    const f=fieldsOf(ex).find(x=>x[0]===p[1]),dr=draftFor(ex);
+    let v=(dr[p[1]]||0)+Number(p[2])*f[2];if(v<0)v=0;
+    dr[p[1]]=Math.round(v*100)/100;
+    const inp=$('in-'+ex.id+'-'+p[1]);if(inp)inp.value=shown(ex,p[1]);
+    const q=$('q-'+ex.id);if(q)q.textContent=fmtDraft(ex);
+    return;
+  }
+  if(ds.del){
+    const id=ds.del,k=UI.date,x=daySets(k).find(s=>s.id===id);
+    removeSet(k,id);
+    if(x)toast('Подход удалён: '+x.n+' '+fmtSet(x),()=>{ensureDay(k).sets.push(x);S.days[k].sets.sort((a,b)=>a.at-b.at);persistDay(k);render();});
+    return;
+  }
+  if(ds.addex){UI.addOpen=ds.addex==='1';UI.focusNew=UI.addOpen;renderMain();return;}
+  if(ds.day){setDate(ds.day);return;}
+  if(b.id==='prevDay'){setDate(addDays(UI.date,-1));return;}
+  if(b.id==='nextDay'){if(UI.date<addDays(todayKey(),60))setDate(addDays(UI.date,1));return;}
+  if(b.id==='todayBtn'){setDate(todayKey());return;}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.classList||!t.classList.contains('num'))return;
+  const ex=getEx(t.dataset.ex);if(!ex)return;
+  setField(ex,t.dataset.f,t.value);
+  const q=$('q-'+ex.id);if(q)q.textContent=fmtDraft(ex);
+});
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if(e.key==='Enter'&&t.classList&&t.classList.contains('num')){e.preventDefault();logSet(t.dataset.ex);}
+});
+document.addEventListener('submit',e=>{if(e.target.id==='addForm'){e.preventDefault();addCustom();}});
+
+// keep "today" correct if the page stays open past midnight
+let lastToday=todayKey();
+setInterval(()=>{const t=todayKey();if(t!==lastToday){if(UI.date===lastToday)UI.date=t;lastToday=t;render();}},60000);
+
+/* ---------- backup (installed app) ---------- */
+(function(){
+  const ex=$('exportBtn'),im=$('importFile');if(!ex||!im)return;
+  ex.addEventListener('click',async()=>{
+    const data=JSON.stringify({app:'workout-log',v:1,exported:new Date().toISOString(),days:S.days,config:S.config});
+    const name='trenirovki-'+todayKey()+'.json';
+    let file;try{file=new File([data],name,{type:'application/json'});}catch(e){file=new Blob([data],{type:'application/json'});}
+    try{if(navigator.canShare&&file instanceof File&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Журнал тренировок'});return;}}
+    catch(e){if(e&&e.name==='AbortError')return;}
+    const url=URL.createObjectURL(file),link=document.createElement('a');
+    link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    toast('Копия сохранена: '+name);
+  });
+  im.addEventListener('change',()=>{
+    const f=im.files&&im.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const o=JSON.parse(r.result);if(!o||typeof o.days!=='object')throw new Error('format');
+        const n=Object.keys(o.days).length;
+        if(!window.confirm('Заменить текущие записи копией? В ней '+n+' '+plural(n,['день','дня','дней'])+'.')){im.value='';return;}
+        S.days=o.days;S.config=o.config||{};normConfig();saveLocal();
+        Object.keys(drafts).forEach(k=>delete drafts[k]);
+        UI.tab=defaultTab(UI.date);render();
+        toast('Копия загружена: '+n+' '+plural(n,['день','дня','дней'])+'.');
+      }catch(e){toast('Не получилось прочитать файл. Выберите копию, сохранённую из этого приложения.');}
+      im.value='';
+    };
+    r.readAsText(f);
+  });
+})();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+
+/* ---------- boot ---------- */
+loadLocal();normConfig();UI.tab=defaultTab(UI.date);setStatus();render();connect();
+})();
+</script>
+</body>
+</html>
