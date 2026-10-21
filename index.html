@@ -1589,9 +1589,10 @@ function goLocal(msg){
   S.mode='local';S.pending={};saveLocal();setStatus();
   if(msg)toast(msg);
 }
+const BUILD='21.10 17:05';
 function setStatus(){
   const t=S.mode==='db'?'Записи сохраняются в вашем аккаунте и видны на всех устройствах':'Записи хранятся на этом телефоне';
-  $('status').textContent=t;
+  $('status').textContent=t+' · версия '+BUILD;
   const d=$('syncDot');d.title=t;d.className='logo'+(S.mode==='db'?' ok':'');
 }
 async function connect(){
@@ -3081,7 +3082,12 @@ setInterval(()=>{const t=todayKey();if(t!==lastToday){if(UI.date===lastToday)UI.
     r.readAsText(f);
   });
 })();
-if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+if('serviceWorker' in navigator&&!window.__SEED){
+  // when a newer version takes over, reload once so the new design shows right away
+  const hadSW=!!navigator.serviceWorker.controller;let reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadSW&&!reloaded){reloaded=true;location.reload();}});
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});});
+}
 
 /* ---------- boot ---------- */
 loadLocal();if(window.__SEED){S.days=clone(window.__SEED.days);S.config=clone(window.__SEED.config);}normConfig();UI.tab=defaultTab(UI.date);if(window.__UI)Object.assign(UI,window.__UI);setStatus();render();connect();
