@@ -477,6 +477,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .eqg.g-machine{background:linear-gradient(160deg,#3d6bd8,#1c3a86)}
 .eqg.g-cable{background:linear-gradient(160deg,#2a9d8f,#145a52)}
 .eqg.g-bench{background:linear-gradient(160deg,#8a6a3e,#4a3820)}
+.pwarn{border-radius:var(--r);padding:14px 16px;display:grid;gap:8px;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--p-orange) 60%,transparent),var(--shadow)}
+.pwarn b{font-size:14.5px;line-height:1.3}.pwarn span{font-size:13px;color:var(--muted)}
+.pwarn .duo{margin-top:4px}
 /* coach chat */
 .chead{padding:12px 14px}
 .ctop{display:flex;align-items:center;gap:12px;min-width:0}
@@ -584,7 +587,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <button class="tab" role="tab" id="tab-day" data-tab="day" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Тренировка<span class="tc" id="tabCount" hidden></span></button>
   <button class="tab" role="tab" id="tab-food" data-tab="food" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v3H17"/></svg>Питание</button>
   <button class="tab" role="tab" id="tab-stats" data-tab="stats" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>Итоги</button>
-  <button class="tab" role="tab" id="tab-coach" data-tab="coach" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-7l-5 3.8V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.8h.01M12 10.8h.01M16 10.8h.01"/></svg>Тренер</button>
+  <button class="tab" role="tab" id="tab-coach" data-tab="coach" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.9 11.5H21V7.5H9.5A6 6 0 1 0 13.9 11.5z"/><circle cx="9.5" cy="13.5" r="1.5"/><path d="M15 4.5l1-2M18.5 5l1.5-1.5M11.5 4.8 11 2.8"/></svg>Тренер</button>
 </nav>
 <div class="sheet-bg" id="remBg" hidden></div>
 <section class="sheet glass" id="remSheet" role="dialog" aria-modal="true" aria-labelledby="remTitle" hidden>
@@ -1708,14 +1711,16 @@ function changeGoal(id,delta){
 }
 function prevPlanDay(){
   const keys=Object.keys(S.days).filter(k=>k<UI.date&&dayPlan(k).length).sort();
+  const si=schedInfo(UI.date);
+  if(si&&si.place){const same=keys.filter(k=>{const s=schedInfo(k);return s&&s.place===si.place;});if(same.length)return same[same.length-1];}
   return keys.length?keys[keys.length-1]:null;
 }
 function copyPlan(from){
   UI.building=true;
-  const plan=ownPlan(UI.date);let added=0;
-  dayPlan(from).forEach(p=>{if(!plan.some(x=>x.ex===p.ex)){plan.push(clone(p));added++;}});
+  const plan=ownPlan(UI.date),eq=dayEquip(UI.date);let added=0,skip=0;
+  dayPlan(from).forEach(p=>{const e=getEx(p.ex);if(e&&!exOk(e,eq)){skip++;return;}if(!plan.some(x=>x.ex===p.ex)){plan.push(clone(p));added++;}});
   persistDay(UI.date);render();
-  toast(added?'Добавлено '+added+' '+plural(added,UPR)+' из тренировки '+dateLong(from)+'.':'Все упражнения оттуда уже в тренировке.');
+  toast((added?'Добавлено '+added+' '+plural(added,UPR)+' из тренировки '+dateLong(from)+'.':'Все подходящие упражнения оттуда уже в тренировке.')+(skip?' Не подходят месту: '+skip+'.':''));
 }
 function addCustom(){
   const name=$('newName').value.trim();
@@ -1916,19 +1921,33 @@ function dayView(){
   return top+dayView0();
 }
 function isBuilding(){return UI.tab==='day'&&(UI.building||(!dayItems(UI.date).length&&UI.date>=todayKey()));}
+// exercises of a planned day that its place cannot host (plan saved before places or goal changed, or copied from another place)
+function misfits(k){const si=schedInfo(k);if(!si||!si.place||k<todayKey())return [];const eq=dayEquip(k);return dayPlan(k).filter(p=>{const e=getEx(p.ex);return e&&!exOk(e,eq);});}
+function placeWarn(k){
+  const m=misfits(k);if(!m.length)return '';const pn=PLACE_NAME[schedInfo(k).place];
+  return '<section class="pwarn glass"><b>Не подходит месту «'+pn+'»: '+m.map(p=>esc(getEx(p.ex).name)).join(', ')+'</b>'+
+    '<span>Этот день сохранён со старым набором упражнений, а по календарю он теперь «'+pn+'», где нужного инвентаря нет.</span>'+
+    '<div class="duo"><button class="log tint press" data-fixday="reset">План для «'+pn+'»</button><button class="ghost glass press" data-fixday="drop">Убрать только эти</button></div></section>';
+}
+function fixDay(mode){
+  const k=UI.date,d=day(k);if(!d)return;
+  if(mode==='reset'){d.plan=[];d.planEdited=false;toast('План дня взят из программы для этого места.');}
+  else{const eq=dayEquip(k),n=d.plan.length;d.plan=ownPlan(k).filter(p=>{const e=getEx(p.ex);return !e||exOk(e,eq);});toast('Убрано: '+(n-d.plan.length)+'.');}
+  persistDay(k);render();
+}
 function dayView0(){
   const items=dayItems(UI.date);
   if(isBuilding()){
     const head=items.length?'<div class="bhead"><b>Изменить упражнения</b><button class="rm" data-build="0">Готово</button></div>':
       '<div class="bhead"><div><b>Соберите тренировку на '+(UI.date===todayKey()?'сегодня':dateLong(UI.date))+'</b><span>Выберите направление, отметьте упражнения и задайте подходы.</span></div></div>';
-    return remindBanner()+'<section class="stack">'+head+buildView()+'</section>';
+    return remindBanner()+'<section class="stack">'+head+placeWarn(UI.date)+buildView()+'</section>';
   }
   if(!items.length){
     return '<div class="emptycard glass"><h3>Тренировки не было</h3><p class="empty">В этот день ничего не отмечено. Можно добавить её задним числом.</p>'+
       '<div class="toolrow"><button class="log tint press" data-build="1">Добавить упражнения</button></div></div>';
   }
   const byDir={},s=daySets(UI.date);items.forEach(it=>{(byDir[it.ex.dir]=byDir[it.ex.dir]||[]).push(it);});
-  let html=remindBanner()+heroCard();
+  let html=remindBanner()+heroCard()+placeWarn(UI.date);
   DIRS.forEach(d=>{
     const g=byDir[d.id];if(!g)return;
     const done=s.filter(x=>x.dir===d.id).length,goal=g.reduce((a,it)=>a+(it.goal||0),0);
@@ -2399,11 +2418,14 @@ function ownPlan(k){
 }
 function acceptProfile(pr){
   pr.accepted=true;pr.weights=(prof()&&prof().weights)||[{d:todayKey(),kg:pr.weight}];
-  S.config.profile=pr;S.config.setupSkipped=false;UI.goalEdit=false;
+  const t0=todayKey(),edited=Object.keys(S.days).filter(k=>k>=t0&&S.days[k].planEdited&&!(S.days[k].sets&&S.days[k].sets.length));
+  const oldPlace={};edited.forEach(k=>{const s=schedInfo(k);oldPlace[k]=s?s.place:null;});
+  S.config.profile=pr;
+  let reset=0;edited.forEach(k=>{const s=schedInfo(k),d=S.days[k];if(!s||s.place!==oldPlace[k]||misfits(k).length){d.plan=[];d.planEdited=false;persistDay(k);reset++;}});S.config.setupSkipped=false;UI.goalEdit=false;
   S.config.food=Object.assign({},S.config.food,{goal:pr.kcal});
   const r=S.config.reminder;if(!r||!r.on)S.config.reminder=Object.assign({time:'19:00',before:15,on:false},r||{},{days:pr.days.slice()});
   persistConfig();SETUP.step='goal';SETUP.d=null;
-  render();toast('План готов: '+pr.days.map(weekdayName).join(', ')+'. Тренировки уже стоят в календаре.');
+  render();toast('План готов: '+pr.days.map(weekdayName).join(', ')+'. Тренировки уже стоят в календаре.'+(reset?' Обновлено дней, собранных раньше: '+reset+'.':''));
 }
 function curWeight(pr){const w=pr.weights||[];return w.length?w[w.length-1].kg:pr.weight;}
 function logWeight(kg){
@@ -2762,7 +2784,7 @@ function planItemFor(ex,sets,reps){
 }
 function dayLabel(k){const t=todayKey();return k===t?'Сегодня':k===addDays(t,1)?'Завтра':wdOf(k)+', '+dateLong(k);}
 function applyCoachActions(list){
-  const acts=[],undo={},t=todayKey();
+  const acts=[],undo={},t=todayKey(),skipped=[];
   const snap=k=>{if(!undo[k]){const d=day(k);undo[k]={plan:d&&d.plan?clone(d.plan):[],edited:!!(d&&d.planEdited)};}};
   (Array.isArray(list)?list:[]).slice(0,12).forEach(a=>{
     if(!a||typeof a!=='object')return;
@@ -2771,12 +2793,14 @@ function applyCoachActions(list){
     const type=String(a.type||''),pl=dayPlan(k);
     if(type==='replace'){
       const from=getEx(a.from),to=getEx(a.to);if(!from||!to||from.id===to.id)return;
+      if(!exOk(to,dayEquip(k))){skipped.push(to.name);return;}
       if(!pl.some(p=>p.ex===from.id)||pl.some(p=>p.ex===to.id))return;
       snap(k);const own=ownPlan(k),j=own.findIndex(p=>p.ex===from.id),old=own[j];
       own[j]=planItemFor(to,old.goal,old.k===to.kind?(to.kind==='time'?old.t:old.r):null);
       persistDay(k);acts.push({label:dayLabel(k)+': '+from.name+' → '+to.name});
     }else if(type==='add'){
       const ex=getEx(a.ex);if(!ex||pl.some(p=>p.ex===ex.id))return;
+      if(!exOk(ex,dayEquip(k))){skipped.push(ex.name);return;}
       snap(k);ownPlan(k).push(planItemFor(ex,a.sets,a.reps));
       persistDay(k);acts.push({label:dayLabel(k)+': добавлено «'+ex.name+'»'});
     }else if(type==='remove'){
@@ -2785,7 +2809,7 @@ function applyCoachActions(list){
       persistDay(k);acts.push({label:dayLabel(k)+': убрано «'+ex.name+'»'});
     }
   });
-  return {acts:acts,undo:acts.length?undo:null};
+  return {acts:acts,undo:acts.length?undo:null,skipped:skipped};
 }
 function undoCoach(i){
   const m=COACH.msgs[i];if(!m||!m.undo||m.undone)return;
@@ -2793,7 +2817,7 @@ function undoCoach(i){
   m.undone=true;saveCoach();render();toast('Изменения в плане отменены.');
 }
 function chatHistory(){
-  let h=COACH.msgs.slice(-16).map(m=>({role:m.role,content:m.role==='assistant'?m.text+(m.acts&&m.acts.length?'\n[Изменения в плане: '+m.acts.map(a=>a.label).join('; ')+(m.undone?' — пользователь отменил их':'')+']':''):m.text}));
+  let h=COACH.msgs.slice(-16).map(m=>({role:m.role,content:m.role==='assistant'?m.text+(m.acts&&m.acts.length?'\n[Изменения в плане: '+m.acts.map(a=>a.label).join('; ')+(m.undone?' — пользователь отменил их':'')+']':'')+(m.skipped?'\n[Не поставлено, нет инвентаря: '+m.skipped.join(', ')+']':''):m.text}));
   while(h.length&&h[0].role!=='user')h.shift();
   return h;
 }
@@ -2812,7 +2836,7 @@ async function coachSend(text){
     if(COACH.ctl!==ctl)return;
     const reply=String((o&&(o.reply||o.text||o.answer))||'').trim();
     const res=applyCoachActions(o&&o.actions);
-    COACH.msgs.push({role:'assistant',text:(reply||'Готово.').slice(0,4000),at:Date.now(),acts:res.acts,undo:res.undo});
+    COACH.msgs.push({role:'assistant',text:(reply||'Готово.').slice(0,4000),at:Date.now(),acts:res.acts,undo:res.undo,skipped:res.skipped.length?res.skipped:undefined});
   }catch(e){
     if(COACH.ctl!==ctl)return;
     if(!(e&&(e.name==='AbortError'||e.code==='cancelled')))COACH.err=(e&&e.code)||'x';
@@ -2827,7 +2851,7 @@ function fmtReply(s){
     else{if(inList){h+='</ul>';inList=false;}if(l.trim())h+='<p>'+l+'</p>';}});
   return h+(inList?'</ul>':'');
 }
-const COACH_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-7l-5 3.8V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.8h.01M12 10.8h.01M16 10.8h.01"/></svg>';
+const COACH_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.9 11.5H21V7.5H9.5A6 6 0 1 0 13.9 11.5z"/><circle cx="9.5" cy="13.5" r="1.5"/><path d="M15 4.5l1-2M18.5 5l1.5-1.5M11.5 4.8 11 2.8"/></svg>';
 const SEND_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>';
 const COACH_SUG=['Чем заменить упражнение в сегодняшней тренировке?','Что съесть на ужин, чтобы попасть в норму?','Сделай завтрашнюю тренировку короче','Как у меня дела с целью?'];
 function coachView(){
@@ -2846,6 +2870,7 @@ function coachView(){
     h+='<div class="msg bot"><div class="bub">'+fmtReply(m.text)+
       (m.acts&&m.acts.length?'<div class="cacts">'+m.acts.map(a=>'<span'+(m.undone?' class="off"':'')+'>'+(m.undone?'':'✓ ')+esc(a.label)+'</span>').join('')+
         (m.undo&&!m.undone?'<button class="rm" data-cundo="'+i+'">Отменить изменения</button>':m.undone?'<i>Изменения отменены</i>':'')+'</div>':'')+
+      (m.skipped?'<div class="cacts"><i>Не поставлено, нет инвентаря в этот день: '+m.skipped.map(esc).join(', ')+'</i></div>':'')+
       '</div></div>';
   });
   if(COACH.busy)h+='<div class="msg bot"><div class="bub typing" aria-label="Тренер печатает"><i></i><i></i><i></i></div></div>';
@@ -2907,6 +2932,7 @@ document.addEventListener('click',e=>{
   if(ds.xdel){if(UI.armed===ds.xdel)deleteEx(ds.xdel);else{UI.armed=ds.xdel;renderMain();}return;}
   if(ds.restore){restoreDir(ds.restore);return;}
   if(ds.copy){copyPlan(ds.copy);return;}
+  if(ds.fixday){fixDay(ds.fixday);return;}
   if(ds.unplan){unplan(ds.unplan);return;}
   if(ds.open){UI.open=UI.open===ds.open?null:ds.open;renderMain();return;}
   if(ds.quick){logSet(ds.quick);return;}
