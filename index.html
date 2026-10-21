@@ -1861,7 +1861,7 @@ function heroCard(){
   const doneSets=plan.reduce((a,p)=>a+Math.min(p.goal||0,cnt(p.ex)),0);
   const doneEx=plan.filter(p=>p.goal&&cnt(p.ex)>=p.goal).length;
   const pct=goalSum?Math.round(doneSets/goalSum*100):0;
-  return '<section class="hero glass">'+(si?'<div class="slabel">Тренировка '+si.letter+(si.place&&pr.places&&pr.places.length>1?' · '+PLACE_NAME[si.place]:'')+' · неделя '+(si.week+1)+' из '+pr.weeks+'</div>':'')+'<div class="hero-top"><div><div class="hero-n">'+s.length+'</div><div class="hero-l">'+plural(s.length,PODH)+' отмечено</div></div>'+
+  return '<section class="hero glass">'+(si?'<div class="slabel">Тренировка '+si.letter+(si.place&&multiPlace(pr)?' · '+PLACE_NAME[si.place]:'')+' · неделя '+(si.week+1)+' из '+pr.weeks+'</div>':'')+'<div class="hero-top"><div><div class="hero-n">'+s.length+'</div><div class="hero-l">'+plural(s.length,PODH)+' отмечено</div></div>'+
     (plan.length?'<div class="ring" style="--pct:'+pct+'" role="img" aria-label="План выполнен на '+pct+'%"><span>'+pct+'%</span></div>':'')+'</div>'+
     (plan.length?'<div class="hero-sub">'+doneEx+' из '+plan.length+' '+plural(plan.length,UPR)+' готово · '+doneSets+' из '+goalSum+' подходов по плану</div>':'')+'</section>';
 }
@@ -2331,27 +2331,37 @@ function planItem(row,week){
   return it;
 }
 const PLACE_NAME={home:'Дома',street:'Улица',gym:'Зал'};
-const LETTERS='АБВГДЕЖ';
+const LETTERS='АБВГДЕЖИКЛ';
 function placeEquip(pr,pl){return (pr&&pr.placeEq&&pr.placeEq[pl])||EQUIP_PRESET[pl]||(pr&&pr.equip)||equipNow();}
 function dayPlaceOf(pr,wd){const ps=pr.places&&pr.places.length?pr.places:null;if(!ps)return null;const p=pr.dayPlace&&pr.dayPlace[wd];return ps.indexOf(p)>=0?p:ps[0];}
+// places actually used by the training days (a selected place with no days does not count)
+function usedPlaces(pr){const ps=pr.places&&pr.places.length?pr.places:[];return ps.filter(p=>(pr.days||[]).some(wd=>dayPlaceOf(pr,wd)===p));}
+function multiPlace(pr){return usedPlaces(pr).length>1;}
+// each place keeps its own rotation of workouts: only the days the user set for that place
+function placeProfile(pr,pl){const ds=(pr.days||[]).filter(wd=>dayPlaceOf(pr,wd)===pl);return Object.assign({},pr,{days:ds,ndays:ds.length});}
+function placeGroups(pr){
+  if(!multiPlace(pr))return [{place:usedPlaces(pr)[0]||null,pp:pr,off:0,L:sessionPlanFor(pr).length}];
+  let off=0;return usedPlaces(pr).map(p=>{const pp=placeProfile(pr,p),L=sessionPlanFor(pp).length,g={place:p,pp:pp,off:off,L:L};off+=L;return g;});
+}
 function schedInfo(k){
   const pr=prof();if(!pr||!pr.accepted||k<pr.start||k>pr.end)return null;
-  const wd=parseKey(k).getDay(),idx=pr.days.indexOf(wd);if(idx<0)return null;
+  const wd=parseKey(k).getDay();if(pr.days.indexOf(wd)<0)return null;
+  const place=dayPlaceOf(pr,wd),g=placeGroups(pr).find(x=>!x.place||x.place===place)||placeGroups(pr)[0];
+  const days=g.pp.days,idx=days.indexOf(wd);
   const week=Math.floor((parseKey(k)-parseKey(mondayOf(pr.start)))/(7*864e5));
-  // sessions are counted from the first planned day, so the first workout is always «А»
-  let first=0;const sw=parseKey(pr.start).getDay();for(let i=0;i<pr.days.length;i++){if(((pr.days[i]+6)%7)>=((sw+6)%7)){first=i;break;}if(i===pr.days.length-1)first=pr.days.length;}
-  const n=week*pr.days.length+idx-first,place=dayPlaceOf(pr,wd);
-  const L=sessionPlanFor(pr).length;
-  return {n:n,L:L,letter:LETTERS[((n%L)+L)%L],place:place,week:week,wd:wd};
+  // sessions are counted from the first planned day of this place, so its first workout is always its first letter
+  let first=0;const sw=parseKey(pr.start).getDay();for(let i=0;i<days.length;i++){if(((days[i]+6)%7)>=((sw+6)%7)){first=i;break;}if(i===days.length-1)first=days.length;}
+  const n=week*days.length+idx-first,L=g.L,li=((n%L)+L)%L;
+  return {n:n,L:L,li:li,letter:LETTERS[g.off+li],place:place,week:week,wd:wd,pp:g.pp};
 }
 const schedCache={};
 function schedPlan(k){
   const pr=prof(),si=schedInfo(k);if(!si)return [];
   const eq=si.place?placeEquip(pr,si.place):(pr.equip||equipNow());
-  const ck=pr.start+pr.goal+(pr.area||'')+pr.sex+pr.days.join('')+eq.join('')+S.config.hidden.length+k;
+  const ck=pr.start+pr.goal+(pr.area||'')+pr.sex+pr.days.join('')+'|'+(si.place||'')+si.pp.days.join('')+'|'+si.li+eq.join('')+S.config.hidden.length+k;
   if(schedCache[ck])return schedCache[ck];
-  const tpl=sessionTemplates(pr,eq);
-  return schedCache[ck]=tpl[((si.n%si.L)+si.L)%si.L].map(r=>planItem(r,si.week)).filter(Boolean);
+  const tpl=sessionTemplates(si.pp,eq);
+  return schedCache[ck]=(tpl[si.li]||[]).map(r=>planItem(r,si.week)).filter(Boolean);
 }
 // a day's plan becomes its own (editable) copy the first time it is changed
 function ownPlan(k){
@@ -2373,17 +2383,23 @@ function logWeight(kg){
   const k=todayKey();pr.weights=(pr.weights||[]).filter(x=>x.d!==k).concat({d:k,kg:kg}).sort((a,b)=>a.d<b.d?-1:1).slice(-120);
   clearTimeout(goalTimer);goalTimer=setTimeout(persistConfig,600);
 }
+function rotationNote(pr){
+  const gs=placeGroups(pr),seq=g=>{const ls=[];for(let i=0;i<g.L;i++)ls.push(LETTERS[g.off+i]);return ls.join(' → ')+' → снова '+ls[0];};
+  if(gs.length>1)return '<p class="cap">У каждого места свои тренировки, они идут только в его дни:<br>'+gs.map(g=>'<b>'+PLACE_NAME[g.place]+'</b> ('+g.pp.days.map(weekdayName).join(', ')+'): '+seq(g)).join('<br>')+'</p>';
+  const g=gs[0],nd=pr.days.length;
+  return g.L%nd&&nd%g.L?'<p class="cap">Тренировки идут по кругу: '+seq(g)+', поэтому от недели к неделе буквы по дням сдвигаются.</p>':'';
+}
 function planPreview(pr){
   const old=S.config.profile,tmp=Object.assign({},pr,{accepted:true});S.config.profile=tmp;
-  let h='<div class="ppre">';const seen={};
+  let h='<div class="ppre">';const seen={},multi=multiPlace(tmp);
   for(let w=0;w<2;w++){
     const mon=addDays(mondayOf(pr.start),w*7),cells=[];
-    for(let i=0;i<7;i++){const k=addDays(mon,i),si=schedInfo(k);if(si)cells.push('<span class="wk"><b>'+weekdayName(si.wd)+'</b>'+si.letter+(pr.places.length>1?'<i>'+PLACE_NAME[si.place]+'</i>':'')+'</span>');
-      if(si&&!seen[si.letter+si.place]){seen[si.letter+si.place]={si:si,k:k};}}
+    for(let i=0;i<7;i++){const k=addDays(mon,i),si=schedInfo(k);if(si)cells.push('<span class="wk"><b>'+weekdayName(si.wd)+'</b>'+si.letter+(multi?'<i>'+PLACE_NAME[si.place]+'</i>':'')+'</span>');
+      if(si&&!seen[si.letter]){seen[si.letter]={si:si,k:k};}}
     h+='<div class="wrow"><span class="wlab">'+(w?'Неделя 2':'Неделя 1')+'</span>'+cells.join('')+'</div>';
   }
   Object.keys(seen).sort().forEach(key=>{const o=seen[key];const items=schedPlan(o.k);
-    h+='<div class="pday"><b>Тренировка '+o.si.letter+(pr.places.length>1?' · '+PLACE_NAME[o.si.place]:'')+'</b><ul>'+items.map(it=>'<li>'+esc(it.n)+' <i>'+it.goal+'×'+(it.k==='time'?it.t+' с':it.r)+'</i></li>').join('')+'</ul></div>';});
+    h+='<div class="pday"><b>Тренировка '+o.si.letter+(multi?' · '+PLACE_NAME[o.si.place]:'')+'</b><ul>'+items.map(it=>'<li>'+esc(it.n)+' <i>'+it.goal+'×'+(it.k==='time'?it.t+' с':it.r)+'</i></li>').join('')+'</ul></div>';});
   S.config.profile=old;
   return h+'</div>';
 }
@@ -2423,8 +2439,8 @@ function setupView(){
       '<div class="macros"><span><b>'+pr.p+'</b> г белки</span><span><b>'+pr.f+'</b> г жиры</span><span><b>'+pr.c+'</b> г углеводы</span></div>'+
       '<p class="cap">'+pr.weight+' → '+pr.target+' кг'+(pr.rate?', темп '+sign+String(pr.rate).replace('.',',')+' кг в неделю':', вес держим, меняем форму')+'. Обмен '+num(pr.bmr)+' ккал, с '+pr.ndays+' тренировками — '+num(pr.tdee)+' ккал. Расчёт по формуле Миффлина — Сан Жеора.</p>'+
       (pr.warn?'<p class="ferr">'+esc(pr.warn)+'</p>':'')+
-      '<h3 class="sec" style="margin:4px 0 0">План тренировок · '+pr.days.map(weekdayName).join(', ')+'</h3>'+(sessionPlanFor(pr).length%pr.days.length&&pr.days.length%sessionPlanFor(pr).length?'<p class="cap">Тренировки идут по кругу: '+sessionPlanFor(pr).map((_,i)=>LETTERS[i]).join(' → ')+' → снова '+LETTERS[0]+', поэтому от недели к неделе буквы по дням сдвигаются.</p>':'')+planPreview(pr)+
-      '<p class="cap">Повторы растут на один каждые две недели. План встанет во вкладку «Тренировка» на все '+pr.weeks+' '+plural(pr.weeks,['неделю','недели','недель'])+'; любой день можно поменять в «Собрать».</p>'+
+      '<h3 class="sec" style="margin:4px 0 0">План тренировок · '+pr.days.map(weekdayName).join(', ')+'</h3>'+rotationNote(pr)+planPreview(pr)+
+      '<p class="cap">Повторы растут на один каждые две недели. План встанет во вкладку «Тренировка» на все '+pr.weeks+' '+plural(pr.weeks,['неделю','недели','недель'])+'; любой день можно поменять там же.</p>'+
       '<div class="duo"><button class="log tint press" data-setup="accept">Принять план</button><button class="ghost glass press" data-setup="back">Изменить данные</button></div>';
   }
   if(prof()&&prof().accepted)h+='<button class="restore" data-setup="close">Отменить изменение цели</button>';
