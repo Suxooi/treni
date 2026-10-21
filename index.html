@@ -481,6 +481,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .pwarn b{font-size:14.5px;line-height:1.3}.pwarn span{font-size:13px;color:var(--muted)}
 .pwarn .duo{margin-top:4px}
 /* coach chat */
+.cset{gap:14px}
+.cta{width:100%;min-width:0;border-radius:14px;border:1px solid var(--glass-edge);background:var(--glass-strong);color:var(--ink);font:inherit;font-size:16px;line-height:1.4;padding:10px 12px;resize:vertical}
+.cta.mono{font-size:13.5px;line-height:1.45;min-height:260px}
+.ctag{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.ctag.on{background:color-mix(in srgb,var(--dir) 18%,transparent);color:var(--ink)}
+.cfull{margin:0;max-height:360px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:var(--f-num);font-size:11.5px;line-height:1.45;padding:10px 12px;border-radius:12px;background:var(--sunk);color:var(--muted)}
+.cset .seg2 button{font-size:13.5px;padding:0 4px}
 .chead{padding:12px 14px}
 .ctop{display:flex;align-items:center;gap:12px;min-width:0}
 .cava{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;color:var(--on-dir);background:linear-gradient(160deg,color-mix(in srgb,var(--dir) 70%,white),var(--dir));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 10px color-mix(in srgb,var(--dir) 30%,transparent)}
@@ -2705,7 +2712,7 @@ function dropKey(){try{localStorage.removeItem(aiProv()==='deepseek'?DS_KEY_LS:A
 
 /* ---------- coach chat ---------- */
 const COACH_LS='wt-coach-v1';
-const COACH={msgs:[],busy:false,ctl:null,draft:'',err:'',keys:false,armClear:false};
+const COACH={msgs:[],busy:false,ctl:null,draft:'',err:'',keys:false,armClear:false,pdraft:null,pfull:false};
 try{const o=JSON.parse(lsGet(COACH_LS)||'null');if(o&&Array.isArray(o.msgs))COACH.msgs=o.msgs;}catch(e){}
 if(window.__COACH)COACH.msgs=window.__COACH;
 function saveCoach(){if(window.__COACH)return;lsSet(COACH_LS,JSON.stringify({msgs:COACH.msgs.slice(-60)}));}
@@ -2758,22 +2765,89 @@ function coachContext(){
     L.push(ex.id+' '+ex.name+' ['+(DIR[ex.dir]?DIR[ex.dir].name:ex.dir)+(multi?'; '+ok.map(e=>PLACE_NAME[e.place]).join(', '):'')+']');});
   return L.join('\n');
 }
+/* ---------- coach: editable instruction + interaction settings ---------- */
+const COACH_DEFAULT=`Ты — персональный тренер и нутрициолог в приложении «Журнал тренировок». Ты ведёшь одного человека: видишь его цель, программу, отмеченные подходы, питание и вес (данные ниже) и помогаешь дойти до цели.
+
+Как ты работаешь
+- Сначала смотри на данные, потом отвечай. Называй конкретные цифры: сколько осталось калорий и белка на сегодня, сколько подходов сделано, как меняется вес.
+- Отвечай на заданный вопрос, без лекций. Общие советы — только если они меняют решение.
+- Если вопрос неясен и от ответа зависит план, задай один уточняющий вопрос.
+- Заканчивай ответ одним конкретным шагом: что сделать сегодня или на ближайшей тренировке.
+
+Тренировки
+- Замену подбирай на ту же группу мышц и с инвентарём, который есть в месте тренировки этого дня.
+- Пропущенная тренировка: не переносить всё подряд, а продолжать по плану. После перерыва больше недели первая тренировка на 1–2 подхода легче.
+- Прогрессия: если все подходы выполнены с запасом 1–2 повтора — добавить повтор или вес. Не получается две тренировки подряд — оставить нагрузку.
+- Нет сил или плохой сон: предложи укороченную версию (первые 2–3 упражнения), а не отмену.
+- Боль (не путать с обычной усталостью мышц): убрать упражнение, которое её вызывает, и предложить безболезненную замену.
+- Если пользователь не просил менять план — предложи изменение и спроси, применить ли.
+
+Питание
+- Норма и БЖУ — из данных. Считай остаток на день и предлагай обычную еду с граммовками.
+- Вес колеблется день ото дня, выводы делай по тренду за 1–2 недели. Если тренд стоит две недели — сдвинь норму на 100–200 ккал, не больше.
+- Срыв или «лишняя» еда — без упрёков: оцени день и неделю целиком и скажи, что делать дальше.
+
+Примеры хороших ответов
+Пользователь: Сегодня нет сил, может пропустить?
+Тренер: Если плохо спали или заболеваете — пропустите, это нормально. Если просто нет настроения, сделайте короткую версию: присед, жим и тягу по 2 подхода, минут 25. Убрать остальное из сегодняшнего плана?
+
+Пользователь: Съел пиццу, всё пропало?
+Тренер: Нет. Сейчас 2 100 из 2 800 ккал и 70 из 137 г белка — день ещё в норме. На ужин возьмите что-то белковое и лёгкое: 200 г творога или курицу с овощами. На результат влияет неделя, а не один ужин.`;
+const COACH_TECH=`Всегда, независимо от инструкции выше
+- Ты не врач: не ставишь диагнозов, не назначаешь лекарства. При острой боли, отёке, онемении, боли дольше недели, болезни, беременности — сначала к врачу.
+- Не предлагай голодание, дефицит больше 25% от расхода, «детоксы» и отказ от целых групп продуктов. Если человек пишет о вине за еду, желании «отработать» её или сильно урезать калории — без цифр и давления, поддержи и предложи обсудить это со специалистом.
+
+Формат ответа (обязательно)
+Отвечай только JSON-объектом без текста вокруг: {"reply":"текст для пользователя","actions":[]}
+"reply" — обычный текст по-русски: можно переносы строк, списки с "- " и **жирное**, без заголовков и таблиц.
+"actions" — изменения плана тренировок, только если пользователь прямо попросил или согласился на твоё предложение; иначе пустой список. Не пиши, что изменил план, если не вернул действие.
+Действия:
+{"type":"replace","date":"ГГГГ-ММ-ДД","from":"id_старого","to":"id_нового"}
+{"type":"add","date":"ГГГГ-ММ-ДД","ex":"id","sets":3,"reps":10}
+{"type":"remove","date":"ГГГГ-ММ-ДД","ex":"id"}
+id — только из каталога ниже и только с инвентарём места этого дня; даты — сегодня или позже; для упражнений на время "reps" — секунды.`;
+const COACH_OPTS={
+  tone:[['ty','На «ты»','Обращайся к пользователю на «ты».'],['vy','На «вы»','Обращайся к пользователю на «вы».']],
+  style:[['soft','Мягкий','Тон тёплый и поддерживающий: отмечай успехи, мягко возвращай к плану.'],
+         ['calm','Деловой','Тон спокойный и деловой, без лишних эмоций и похвал.'],
+         ['strict','Строгий','Тон строгий и требовательный, как у тренера в зале: прямо называй пропуски и отступления от плана, но без грубости.']],
+  len:[['short','Коротко','Отвечай очень коротко: 1–3 предложения, список — только если без него никак.'],
+       ['mid','Средне','Обычно 2–6 предложений или короткий список.'],
+       ['long','Подробно','Можно отвечать развёрнуто: объясняй, почему так, давай варианты.']],
+  emoji:[['no','Без эмодзи','Без эмодзи.'],['few','Немного','Можно одно эмодзи на ответ, если к месту.']]
+};
+function coachCfg(){return Object.assign({tone:'vy',style:'soft',len:'mid',emoji:'no',name:'',notes:'',prompt:''},S.config.coach||{});}
+let coachTimer=null;
+function setCoachCfg(patch,now){S.config.coach=Object.assign(coachCfg(),patch);clearTimeout(coachTimer);if(now)persistConfig();else coachTimer=setTimeout(persistConfig,700);}
+function optText(key,val){const o=COACH_OPTS[key].find(x=>x[0]===val)||COACH_OPTS[key][0];return o[2];}
+function coachStyle(c){
+  return 'Стиль общения\n'+(c.name.trim()?'- Пользователя зовут '+c.name.trim()+'.\n':'')+
+    ['tone','style','len','emoji'].map(k=>'- '+optText(k,c[k])).join('\n');
+}
 function coachSystem(){
-  return 'Ты — персональный тренер и нутрициолог в приложении «Журнал тренировок». Пользователь пишет тебе в чате на телефоне.\n'+
-    'Правила:\n'+
-    '- Отвечай по-русски, коротко и конкретно: обычно 2–6 предложений или короткий список. Подробно — только если просят.\n'+
-    '- Опирайся на данные пользователя ниже: цель, норму, план, сделанные подходы и съеденное. Считай цифры, а не отвечай общими словами.\n'+
-    '- Ты не врач: при боли, травме, болезни, беременности или лекарствах советуй обратиться к врачу и не давай схем лечения.\n'+
-    '- Меняй план тренировок, только когда пользователь прямо просит или соглашается на твоё предложение. Тогда верни действия в "actions". Бери id только из каталога, даты — сегодня или позже. Учитывай место тренировки в этот день.\n'+
-    '- Не пиши, что изменил план, если не вернул действие.\n'+
-    'Ответ — только JSON-объект без текста вокруг:\n'+
-    '{"reply":"текст для пользователя","actions":[]}\n'+
-    'Действия:\n'+
-    '{"type":"replace","date":"ГГГГ-ММ-ДД","from":"id_старого","to":"id_нового"}\n'+
-    '{"type":"add","date":"ГГГГ-ММ-ДД","ex":"id","sets":3,"reps":10}\n'+
-    '{"type":"remove","date":"ГГГГ-ММ-ДД","ex":"id"}\n'+
-    'Для упражнений на время "reps" — секунды. В "reply" можно переносы строк и списки с "- ", без заголовков и таблиц.\n\n'+
+  const c=coachCfg();
+  return (c.prompt.trim()||COACH_DEFAULT)+'\n\n'+coachStyle(c)+'\n\n'+COACH_TECH+'\n\n'+
+    (c.notes.trim()?'Пользователь о себе (учитывай всегда):\n'+c.notes.trim()+'\n\n':'')+
     'Данные пользователя:\n'+coachContext();
+}
+function coachSettings(){
+  const c=coachCfg(),seg=(key,lab)=>'<div class="sfield"><span class="flab">'+lab+'</span><div class="seg2">'+
+    COACH_OPTS[key].map(o=>'<button data-cset="'+key+'|'+o[0]+'" aria-pressed="'+(c[key]===o[0])+'">'+o[1]+'</button>').join('')+'</div></div>';
+  const custom=!!c.prompt.trim(),pd=COACH.pdraft!=null?COACH.pdraft:(c.prompt.trim()||COACH_DEFAULT);
+  let h='<section class="card glass cset"><h2 class="sec">Общение</h2>'+
+    '<label class="sfield"><span class="flab">Как к вам обращаться</span><input id="cName" class="fhint" maxlength="40" placeholder="Имя, необязательно" value="'+esc(c.name)+'"></label>'+
+    seg('tone','Обращение')+seg('style','Характер')+seg('len','Длина ответов')+seg('emoji','Эмодзи')+'</section>'+
+    '<section class="card glass cset"><h2 class="sec">О себе для тренера</h2>'+
+    '<p class="cap">Это тренер учитывает в каждом ответе. Травмы, что не любите, сколько времени на тренировку, режим и привычки в еде.</p>'+
+    '<textarea id="cNotes" class="cta" rows="4" maxlength="1500" placeholder="Например: побаливает левое колено, не люблю бег, на тренировку 45 минут, ем 3 раза в день, вечером тяжело без сладкого.">'+esc(c.notes)+'</textarea></section>'+
+    '<section class="card glass cset"><div class="calh"><h2 class="sec">Инструкция тренеру</h2><span class="ctag'+(custom?' on':'')+'">'+(custom?'своя':'стандартная')+'</span></div>'+
+    '<p class="cap">Здесь роль, правила тренировок и питания и примеры ответов. Формат ответа и правила безопасности добавляются автоматически, их здесь нет — сломать приложение правкой нельзя.</p>'+
+    '<textarea id="cPrompt" class="cta mono" rows="14" maxlength="8000">'+esc(pd)+'</textarea>'+
+    '<div class="duo"><button class="log tint press" data-coach="psave">Сохранить</button><button class="ghost glass press" data-coach="preset"'+(custom||COACH.pdraft!=null?'':' disabled')+'>Вернуть стандартную</button></div>'+
+    '<button class="rm" data-coach="pfull" aria-expanded="'+!!COACH.pfull+'" style="justify-self:start">'+(COACH.pfull?'Скрыть полный запрос':'Показать, что уходит модели')+'</button>'+
+    (COACH.pfull?'<pre class="cfull">'+esc(coachSystem())+'</pre>':'')+'</section>';
+  if(!SAMPLE)h+=aiBlock();
+  return h;
 }
 function planItemFor(ex,sets,reps){
   const dr=draftFor(ex),it={ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,tu:ex.tu,goal:Math.max(1,Math.min(10,Math.round(+sets)||defGoal(ex)))};
@@ -2858,8 +2932,9 @@ function coachView(){
   const eng=aiEngine(false);
   let h='<section class="card glass chead"><div class="ctop"><span class="cava">'+COACH_ICO+'</span><div><b>Тренер</b><span>'+
     (eng==='ds'?'DeepSeek':eng?'Claude':'ИИ не подключён')+(eng?' · видит цель, план и питание':'')+'</span></div>'+
-    (!SAMPLE?'<button class="rm" data-coach="keys" aria-expanded="'+COACH.keys+'">'+(COACH.keys?'Скрыть':'Настройки')+'</button>':'')+'</div></section>';
-  if(!SAMPLE&&(COACH.keys||(!eng&&!COACH.msgs.length)))h+=aiBlock();
+    '<button class="rm" data-coach="keys" aria-expanded="'+COACH.keys+'">'+(COACH.keys?'Готово':'Настройки')+'</button></div></section>';
+  if(COACH.keys)return h+coachSettings();
+  if(!SAMPLE&&!eng&&!COACH.msgs.length)h+=aiBlock();
   h+='<div class="chat" id="chat" aria-live="polite">';
   if(!COACH.msgs.length){
     h+='<p class="cintro">Спросите про технику, замену упражнения, питание или прогресс. Тренер видит вашу цель, план, отмеченные подходы и еду за день. Если попросите, он поменяет упражнения в плане.</p>'+
@@ -2884,13 +2959,22 @@ function coachView(){
 function coachClick(ds){
   if(ds.csug){coachSend(ds.csug);return true;}
   if(ds.cundo!==undefined){undoCoach(+ds.cundo);return true;}
-  if(ds.coach==='keys'){COACH.keys=!COACH.keys;FOOD.keyEdit=false;renderMain();return true;}
+  if(ds.coach==='keys'){COACH.keys=!COACH.keys;FOOD.keyEdit=false;COACH.pfull=false;renderMain();if(COACH.keys)window.scrollTo({top:0});else scrollCoach();return true;}
+  if(ds.cset){const q=ds.cset.split('|');setCoachCfg({[q[0]]:q[1]},true);renderMain();return true;}
+  if(ds.coach==='psave'){const v=(COACH.pdraft!=null?COACH.pdraft:coachCfg().prompt||COACH_DEFAULT).trim();
+    setCoachCfg({prompt:!v||v===COACH_DEFAULT.trim()?'':v},true);COACH.pdraft=null;renderMain();toast(coachCfg().prompt?'Инструкция тренеру сохранена.':'Стоит стандартная инструкция.');return true;}
+  if(ds.coach==='preset'){COACH.pdraft=null;setCoachCfg({prompt:''},true);renderMain();toast('Вернул стандартную инструкцию.');return true;}
+  if(ds.coach==='pfull'){COACH.pfull=!COACH.pfull;renderMain();return true;}
   if(ds.coach==='clear'){if(!COACH.armClear){COACH.armClear=true;renderMain();return true;}
     COACH.msgs=[];COACH.err='';COACH.armClear=false;saveCoach();renderMain();return true;}
   return false;
 }
 function sizeCoachIn(el){el.style.height='auto';el.style.height=Math.min(120,el.scrollHeight)+'px';}
-document.addEventListener('input',e=>{if(e.target&&e.target.id==='coachIn'){COACH.draft=e.target.value;sizeCoachIn(e.target);}});
+document.addEventListener('input',e=>{const id=e.target&&e.target.id;
+  if(id==='coachIn'){COACH.draft=e.target.value;sizeCoachIn(e.target);}
+  else if(id==='cName')setCoachCfg({name:e.target.value.slice(0,40)});
+  else if(id==='cNotes')setCoachCfg({notes:e.target.value.slice(0,1500)});
+  else if(id==='cPrompt')COACH.pdraft=e.target.value;});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='coachForm'){e.preventDefault();const i=$('coachIn');coachSend(i?i.value:COACH.draft);}});
 
 /* ---------- toast ---------- */
@@ -2910,7 +2994,7 @@ document.addEventListener('click',e=>{
   if(ds.beq||ds.beqpre){S.config.equip=ds.beqpre?EQUIP_PRESET[ds.beqpre].slice():eqToggle(equipNow().slice(),ds.beq);persistConfig();renderMain();return;}
   if(ds.seq||ds.seqpre){readSetup();SETUP.d.equip=ds.seqpre?EQUIP_PRESET[ds.seqpre].slice():eqToggle((SETUP.d.equip||equipNow()).slice(),ds.seq);renderMain();return;}
   if((ds.sgoal||ds.sarea||ds.ssex||ds.sday||ds.splace||ds.sdp||ds.speq||ds.seqt||ds.setup||ds.calm||ds.wstep)&&goalClick(ds))return;
-  if((ds.csug||ds.coach||ds.cundo!==undefined)&&coachClick(ds))return;
+  if((ds.csug||ds.coach||ds.cset||ds.cundo!==undefined)&&coachClick(ds))return;
   if((ds.food||ds.aiprov||ds.fstep||ds.fgoal||ds.meal)&&foodClick(ds))return;
   if(!ds.xdel&&UI.armed){UI.armed=null;if(isBuilding()&&!ds.pick&&!ds.goal&&!ds.pstep)renderMain();}
   if(ds.build){UI.building=ds.build==='1';UI.open=null;UI.addOpen=false;UI.tab='day';render();window.scrollTo({top:0,behavior:'smooth'});return;}
