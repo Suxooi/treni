@@ -1,5 +1,5 @@
 // Журнал тренировок — офлайн-кэш. Меняйте VERSION при каждом обновлении файлов.
-const VERSION = 'trenirovki-202610210812';
+const VERSION = 'trenirovki-202610210918';
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png"];
 
 self.addEventListener('install', (e) => {
