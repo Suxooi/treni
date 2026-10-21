@@ -115,8 +115,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .screen{display:grid;gap:14px}
 
 /* tab bar */
-.tabbar{position:fixed;z-index:14;left:50%;transform:translateX(-50%);bottom:var(--tb-b);width:min(400px,calc(100% - var(--tb-side) * 2));height:var(--tb-h);display:grid;grid-template-columns:repeat(3,1fr);align-items:stretch;border-radius:999px;padding:4px;--ti:0}
-.tab-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:999px;transform:translateX(calc(var(--ti)*100%));transition:transform .45s cubic-bezier(.3,1.45,.45,1);background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.08)),color-mix(in srgb,var(--dir) 22%,transparent);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),0 4px 12px color-mix(in srgb,var(--dir) 22%,transparent)}
+.tabbar{position:fixed;z-index:14;left:50%;transform:translateX(-50%);bottom:var(--tb-b);width:min(400px,calc(100% - var(--tb-side) * 2));height:var(--tb-h);display:grid;grid-template-columns:repeat(4,1fr);align-items:stretch;border-radius:999px;padding:4px;--ti:0}
+.tab-ind{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/4);border-radius:999px;transform:translateX(calc(var(--ti)*100%));transition:transform .45s cubic-bezier(.3,1.45,.45,1);background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.08)),color-mix(in srgb,var(--dir) 22%,transparent);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),0 4px 12px color-mix(in srgb,var(--dir) 22%,transparent)}
 .tab{position:relative;z-index:1;border:0;background:transparent;height:100%;min-width:0;border-radius:999px;display:grid;justify-items:center;align-content:center;gap:3px;padding:0 4px;font-size:10.5px;line-height:1.1;letter-spacing:.01em;font-weight:600;color:var(--muted);white-space:nowrap;transition:color .2s}
 .tab svg{width:24px;height:24px}
 .tab[aria-selected="true"]{color:var(--ink)}
@@ -477,6 +477,42 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .eqg.g-machine{background:linear-gradient(160deg,#3d6bd8,#1c3a86)}
 .eqg.g-cable{background:linear-gradient(160deg,#2a9d8f,#145a52)}
 .eqg.g-bench{background:linear-gradient(160deg,#8a6a3e,#4a3820)}
+/* coach chat */
+.chead{padding:12px 14px}
+.ctop{display:flex;align-items:center;gap:12px;min-width:0}
+.cava{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;color:var(--on-dir);background:linear-gradient(160deg,color-mix(in srgb,var(--dir) 70%,white),var(--dir));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 10px color-mix(in srgb,var(--dir) 30%,transparent)}
+.cava svg{width:22px;height:22px}
+.ctop>div{display:grid;gap:1px;min-width:0;flex:1}.ctop b{font-size:16px}.ctop span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aiset .seg2{margin-top:-2px}
+.chat{display:grid;gap:10px;align-content:start}
+.cintro{margin:2px 6px 0;font-size:14px;color:var(--muted)}
+.csug{display:grid;gap:8px}
+.csug button{justify-self:start;max-width:100%;border:1px solid var(--glass-edge);background:var(--glass);border-radius:18px;min-height:44px;padding:9px 14px;font-size:14.5px;line-height:1.3;text-align:left;color:var(--ink)}
+.msg{display:flex;min-width:0}
+.msg.me{justify-content:flex-end}
+.bub{max-width:86%;min-width:0;padding:9px 14px;border-radius:20px;font-size:15px;line-height:1.42;overflow-wrap:break-word}
+.bub p{margin:0}.bub p+p,.bub ul+p,.bub p+ul{margin-top:6px}
+.bub ul{margin:0;padding-left:18px;display:grid;gap:3px}
+.msg.me .bub{border-bottom-right-radius:6px;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),var(--dir);color:var(--on-dir)}
+.msg.bot .bub{border-bottom-left-radius:6px;background:var(--glass-strong);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)}
+.cacts{display:grid;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:13.5px}
+.cacts span{font-weight:600}.cacts span.off{color:var(--muted);text-decoration:line-through;font-weight:500}
+.cacts i{font-style:normal;color:var(--muted);font-size:12.5px}
+.cacts .rm{justify-self:start;padding:4px 0;color:var(--dir)}
+.typing{display:flex;gap:5px;padding:14px 16px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.cclear{display:flex;justify-content:center}
+.cspace{height:64px}
+.composer{position:fixed;z-index:13;left:50%;transform:translateX(-50%);bottom:calc(var(--tb-b) + var(--tb-h) + 10px);width:min(400px,calc(100% - var(--tb-side) * 2));display:flex;align-items:flex-end;gap:6px;border-radius:24px;padding:5px 5px 5px 16px;margin:0}
+.composer.glass{background:linear-gradient(160deg,rgba(255,255,255,.3),rgba(255,255,255,0) 50%),var(--glass-strong)}
+.composer textarea{flex:1;min-width:0;height:38px;border:0;background:transparent;resize:none;font:inherit;font-size:16px;line-height:1.3;color:var(--ink);padding:9px 0;max-height:120px;outline:none}
+.composer textarea::placeholder{color:var(--muted)}
+.send{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:0;padding:0}
+.send svg{width:18px;height:18px}
+.send:disabled{opacity:.45}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none;opacity:.6}}
 /* reminder */
 .navbtn{position:relative}
 .bell-dot{position:absolute;top:10px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--dir);box-shadow:0 0 0 2px var(--solid)}
@@ -548,6 +584,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <button class="tab" role="tab" id="tab-day" data-tab="day" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Тренировка<span class="tc" id="tabCount" hidden></span></button>
   <button class="tab" role="tab" id="tab-food" data-tab="food" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v3H17"/></svg>Питание</button>
   <button class="tab" role="tab" id="tab-stats" data-tab="stats" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>Итоги</button>
+  <button class="tab" role="tab" id="tab-coach" data-tab="coach" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-7l-5 3.8V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.8h.01M12 10.8h.01M16 10.8h.01"/></svg>Тренер</button>
 </nav>
 <div class="sheet-bg" id="remBg" hidden></div>
 <section class="sheet glass" id="remSheet" role="dialog" aria-modal="true" aria-labelledby="remTitle" hidden>
@@ -1607,7 +1644,7 @@ function dayDirs(k){
 function mainDir(k){const l=dayDirs(k);return l.length?l.slice().sort((x,y)=>y.n-x.n)[0].d.id:null;}
 function setDate(k){
   Object.keys(drafts).forEach(x=>delete drafts[x]);
-  UI.date=k;UI.open=null;UI.armed=null;UI.addOpen=false;UI.building=false;if(UI.tab!=='food'&&UI.tab!=='stats')UI.tab='day';
+  UI.date=k;UI.open=null;UI.armed=null;UI.addOpen=false;UI.building=false;if(UI.tab!=='food'&&UI.tab!=='stats'&&UI.tab!=='coach')UI.tab='day';
   const md=mainDir(k);if(md)UI.dir=md;
   render();
 }
@@ -1817,7 +1854,7 @@ function renderFoodStats(){
   const c=$('calStats');if(c)c.innerHTML=calView();
 }
 function renderTabs(){
-  const tabs=['day','food','stats'];
+  const tabs=['day','food','stats','coach'];
   tabs.forEach(t=>$('tab-'+t).setAttribute('aria-selected',String(UI.tab===t)));
   $('tabbar').style.setProperty('--ti',String(Math.max(0,tabs.indexOf(UI.tab))));
   const n=dayItems(UI.date).length,tc=$('tabCount');
@@ -1826,7 +1863,9 @@ function renderTabs(){
   $('statsView').hidden=UI.tab!=='stats';
 }
 function renderMain(){
-  $('mainBody').innerHTML=UI.tab==='day'?dayView():UI.tab==='food'?foodView():'';
+  const ae=document.activeElement,refocus=ae&&ae.id==='coachIn';
+  $('mainBody').innerHTML=UI.tab==='day'?dayView():UI.tab==='food'?foodView():UI.tab==='coach'?coachView():'';
+  const ci=$('coachIn');if(ci&&ci.style){sizeCoachIn(ci);if(refocus)ci.focus();}
   if(UI.focusNew){UI.focusNew=false;const i=$('newName');if(i)i.focus();}
   startDemos();
 }
@@ -2072,7 +2111,7 @@ const FOOD={stage:'idle',thumb:'',blob:null,res:null,err:'',ctl:null,hint:'',man
 let SAMPLE=null,SAMPLE_IMG=false;
 const API_KEY_LS='wt-api-key';
 function apiKey(){return lsGet(API_KEY_LS)||'';}
-function foodEngine(){return SAMPLE&&SAMPLE_IMG?'claude':apiKey()?'api':'';}
+function foodEngine(){return aiEngine(true);}
 (async function initSample(){
   if(!window.claude||typeof window.claude.use!=='function')return;
   try{
@@ -2113,12 +2152,8 @@ function looseJSON(t){
 async function analyze(blob,hint,signal){
   const eng=foodEngine();
   if(eng==='claude')return await SAMPLE.json(foodPrompt(hint),{images:blob,signal});
-  if(eng==='api'){
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':apiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:await blobB64(blob)}},{type:'text',text:foodPrompt(hint)}]}]})});
-    if(!r.ok)throw {code:'api_'+r.status};
-    const j=await r.json();return looseJSON((j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''));
-  }
+  if(eng==='api')return looseJSON(await anthCall({messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:await blobB64(blob)}},{type:'text',text:foodPrompt(hint)}]}]},signal));
+  if(eng==='ds')return looseJSON(await dsCall({max_tokens:1500,response_format:{type:'json_object'},messages:[{role:'user',content:[{type:'image_url',image_url:{url:'data:image/jpeg;base64,'+await blobB64(blob)}},{type:'text',text:foodPrompt(hint)}]}]},signal));
   throw {code:'no_engine'};
 }
 function normResult(o){
@@ -2162,7 +2197,7 @@ async function runAnalysis(){
   }catch(e){
     if(FOOD.ctl!==ctl)return;
     if(e&&(e.code==='cancelled'||e.name==='AbortError')){FOOD.stage='idle';}
-    else{FOOD.stage='error';FOOD.err=e&&e.code==='not_food'?'На фото не видно еды'+(e.message?': '+e.message:'')+'.':(FOOD_ERR[e&&e.code]||'Не получилось распознать блюдо. Попробуйте ещё раз или добавьте вручную.');}
+    else{FOOD.stage='error';FOOD.err=e&&e.code==='not_food'?'На фото не видно еды'+(e.message?': '+e.message:'')+'.':(FOOD_ERR[e&&e.code]||AI_ERR[e&&e.code]||'Не получилось распознать блюдо. Попробуйте ещё раз или добавьте вручную.');}
   }
   FOOD.ctl=null;renderMain();
 }
@@ -2210,7 +2245,7 @@ function foodView(){
       '<div class="duo"><label class="log tint press filebtn">'+CAM+'Снять фото<input type="file" id="foodCam" class="vh" accept="image/*" capture="environment"></label><label class="ghost glass press filebtn">Из галереи<input type="file" id="foodPick" class="vh" accept="image/*"></label></div>'+
       '<input id="foodHint" class="fhint" placeholder="Уточнение: 300 г, без соуса" value="'+esc(FOOD.hint)+'" aria-label="Уточнение к фото">'+
       (FOOD.stage==='error'?'<p class="ferr">'+esc(FOOD.err)+'</p>'+(FOOD.blob?'<button class="ghost glass press" data-food="retry">Попробовать снова</button>':''):'')+
-      (!eng?'<p class="cap">'+(window.claude?'Распознавание через Claude недоступно в этом окне.':'Чтобы распознавать фото в этой версии, укажите ключ API ниже.')+' Пока можно добавить блюдо вручную.</p>':
+      (!eng?'<p class="cap">'+(window.claude?'Распознавание через Claude недоступно в этом окне.':'Чтобы распознавать фото, выберите ниже Claude или DeepSeek и вставьте ключ.')+' Пока можно добавить блюдо вручную.</p>':
         '<p class="cap">'+(eng==='claude'?'Фото разбирает Claude. При первом разборе он спросит разрешение.':'Фото разбирает Claude по вашему ключу API.')+'</p>')+
       (FOOD.manual?manualForm():'<button class="restore" data-food="manual">Добавить вручную</button>')+'</section>';
   }
@@ -2231,15 +2266,7 @@ function manualForm(){
     '<input id="mP" inputmode="numeric" placeholder="Б, г" aria-label="Белки"><input id="mF" inputmode="numeric" placeholder="Ж, г" aria-label="Жиры"><input id="mC" inputmode="numeric" placeholder="У, г" aria-label="Углеводы">'+
     '<button class="log tint press" type="submit">Добавить</button><button class="rm" type="button" data-food="nomanual">Отмена</button></form>';
 }
-function keyBlock(){
-  const k=apiKey();
-  if(window.claude&&!k&&!FOOD.keyEdit)return '';
-  return '<section class="card glass"><h2 class="sec">Распознавание фото</h2>'+
-    (k&&!FOOD.keyEdit?'<p class="cap">Ключ API Anthropic сохранён на этом устройстве (…'+esc(k.slice(-4))+').</p><div class="toolrow"><button class="ghost glass press" data-food="keyedit">Заменить</button><button class="rm" data-food="keydel">Удалить ключ</button></div>':
-     '<p class="cap">В этой версии фото разбирает Claude через API. Создайте ключ на console.anthropic.com (оплата по тарифу API, обычно доли цента за фото) и вставьте сюда. Ключ хранится только на этом устройстве; не давайте телефон тем, кому не доверяете.</p>'+
-     '<form class="mform" id="keyForm"><input id="apiKeyIn" type="password" autocomplete="off" placeholder="sk-ant-…" aria-label="Ключ API Anthropic"><button class="log tint press" type="submit">Сохранить</button></form>')+
-    '</section>';
-}
+function keyBlock(){return aiBlock();}
 function updateFoodTotals(){
   const res=FOOD.res;if(!res)return;
   res.items.forEach((i,n)=>{const e=$('fk-'+n);if(e)e.textContent=r0(i.k*i.grams)+' ккал';});
@@ -2260,7 +2287,8 @@ function foodClick(ds){
   if(ds.food==='manual'){FOOD.manual=true;renderMain();const i=$('mName');if(i)i.focus();return true;}
   if(ds.food==='nomanual'){FOOD.manual=false;renderMain();return true;}
   if(ds.food==='keyedit'){FOOD.keyEdit=true;renderMain();return true;}
-  if(ds.food==='keydel'){try{localStorage.removeItem(API_KEY_LS);}catch(e){}FOOD.keyEdit=false;renderMain();toast('Ключ удалён с этого устройства.');return true;}
+  if(ds.aiprov){lsSet(PROV_LS,ds.aiprov);FOOD.keyEdit=false;renderMain();return true;}
+  if(ds.food==='keydel'){dropKey();FOOD.keyEdit=false;renderMain();toast('Ключ удалён с этого устройства.');return true;}
   if(ds.fstep&&FOOD.res){const q=ds.fstep.split('|'),it=FOOD.res.items[+q[0]];if(!it)return true;it.grams=Math.max(0,it.grams+Number(q[1]));
     const inp=document.querySelector('.fgr[data-fi="'+q[0]+'"]');if(inp)inp.value=r0(it.grams);updateFoodTotals();return true;}
   if(ds.fgoal){const v=setGoal(foodGoal()+Number(ds.fgoal));const i=$('foodGoal');if(i)i.value=v;renderMain();return true;}
@@ -2283,8 +2311,8 @@ document.addEventListener('submit',e=>{
     if(!n||!(kc>0)){toast('Укажите название и калории.');return;}
     saveMeal({name:n.slice(0,80),kcal:r0(kc),p:r0(parseFloat($('mP').value)),f:r0(parseFloat($('mF').value)),c:r0(parseFloat($('mC').value)),thumb:''});}
   if(e.target.id==='keyForm'){e.preventDefault();
-    const v=$('apiKeyIn').value.trim();if(!/^sk-ant-/.test(v)){toast('Ключ должен начинаться с sk-ant-');return;}
-    lsSet(API_KEY_LS,v);FOOD.keyEdit=false;renderMain();toast('Ключ сохранён на этом устройстве.');}
+    const v=$('apiKeyIn').value.trim();if(!saveKey(v))return;
+    FOOD.keyEdit=false;COACH.err='';renderMain();toast('Ключ сохранён на этом устройстве.');}
 });
 
 /* ---------- goal, calorie target, generated training plan ---------- */
@@ -2604,6 +2632,242 @@ function sessionTemplates(pr,eqArg){
 }
 function eqToggle(list,tag){const i=list.indexOf(tag);if(i>=0){if(list.length>1)list.splice(i,1);}else list.push(tag);return list;}
 
+/* ---------- AI provider: Claude (built-in sampling or Anthropic key) or DeepSeek key; keys stay on this device ---------- */
+const DS_KEY_LS='wt-ds-key',PROV_LS='wt-ai-prov',DS_MODEL='deepseek-flash';
+function dsKey(){return lsGet(DS_KEY_LS)||'';}
+function aiProv(){const p=lsGet(PROV_LS);return p==='deepseek'||p==='claude'?p:(dsKey()&&!apiKey()?'deepseek':'claude');}
+function aiEngine(needImages){
+  if(SAMPLE&&(!needImages||SAMPLE_IMG))return 'claude';
+  const p=aiProv();
+  if(p==='deepseek'&&dsKey())return 'ds';
+  if(p==='claude'&&apiKey())return 'api';
+  return '';
+}
+async function dsCall(body,signal){
+  let r;
+  try{r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',signal,headers:{'Content-Type':'application/json','Authorization':'Bearer '+dsKey()},
+    body:JSON.stringify(Object.assign({model:DS_MODEL,thinking:{type:'disabled'},stream:false},body))});}
+  catch(e){if(e&&e.name==='AbortError')throw e;throw {code:'net_ds'};}
+  if(!r.ok)throw {code:'api_'+r.status};
+  const j=await r.json(),m=j&&j.choices&&j.choices[0]&&j.choices[0].message;
+  return (m&&m.content)||'';
+}
+async function anthCall(body,signal){
+  let r;
+  try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':apiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify(Object.assign({model:'claude-sonnet-5-5',max_tokens:1500},body))});}
+  catch(e){if(e&&e.name==='AbortError')throw e;throw {code:'net'};}
+  if(!r.ok)throw {code:'api_'+r.status};
+  const j=await r.json();return (j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+}
+// key settings card, shared by «Питание» and «Тренер»
+function aiBlock(){
+  if(window.claude&&SAMPLE)return '';
+  const p=aiProv(),ds=p==='deepseek',k=ds?dsKey():apiKey(),name=ds?'DeepSeek':'Anthropic';
+  let h='<section class="card glass aiset"><h2 class="sec">Помощник ИИ · фото еды и тренер</h2>'+
+    '<div class="seg2" role="group" aria-label="Кто отвечает"><button data-aiprov="claude" aria-pressed="'+!ds+'">Claude</button><button data-aiprov="deepseek" aria-pressed="'+ds+'">DeepSeek</button></div>';
+  if(k&&!FOOD.keyEdit)h+='<p class="cap">Ключ '+name+' сохранён на этом устройстве (…'+esc(k.slice(-4))+').</p><div class="toolrow"><button class="ghost glass press" data-food="keyedit">Заменить</button><button class="rm" data-food="keydel">Удалить ключ</button></div>';
+  else h+=(ds?'<p class="cap">Создайте ключ на platform.deepseek.com (раздел API keys) и пополните баланс: обычно это доли цента за фото или ответ. Фото еды и ваши данные уходят на серверы DeepSeek.</p>':
+      '<p class="cap">Создайте ключ на console.anthropic.com (оплата по тарифу API, обычно доли цента за фото или ответ).</p>')+
+    '<p class="cap">Ключ хранится только на этом устройстве; не давайте телефон тем, кому не доверяете.</p>'+
+    '<form class="mform" id="keyForm"><input id="apiKeyIn" type="password" autocomplete="off" placeholder="'+(ds?'sk-…':'sk-ant-…')+'" aria-label="Ключ API '+name+'"><button class="log tint press" type="submit">Сохранить</button></form>';
+  return h+'</section>';
+}
+function saveKey(v){
+  const ds=aiProv()==='deepseek';
+  if(ds){if(!/^sk-/.test(v)||/^sk-ant-/.test(v)){toast('Ключ DeepSeek начинается с sk-');return false;}lsSet(DS_KEY_LS,v);}
+  else{if(!/^sk-ant-/.test(v)){toast('Ключ Anthropic начинается с sk-ant-');return false;}lsSet(API_KEY_LS,v);}
+  lsSet(PROV_LS,ds?'deepseek':'claude');return true;
+}
+function dropKey(){try{localStorage.removeItem(aiProv()==='deepseek'?DS_KEY_LS:API_KEY_LS);}catch(e){}}
+
+/* ---------- coach chat ---------- */
+const COACH_LS='wt-coach-v1';
+const COACH={msgs:[],busy:false,ctl:null,draft:'',err:'',keys:false,armClear:false};
+try{const o=JSON.parse(lsGet(COACH_LS)||'null');if(o&&Array.isArray(o.msgs))COACH.msgs=o.msgs;}catch(e){}
+if(window.__COACH)COACH.msgs=window.__COACH;
+function saveCoach(){if(window.__COACH)return;lsSet(COACH_LS,JSON.stringify({msgs:COACH.msgs.slice(-60)}));}
+const AI_ERR={net_ds:'Не удалось связаться с DeepSeek. Если интернет работает, значит DeepSeek не принимает запросы прямо из браузера, и понадобится сервер-посредник.',
+  net:'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.',
+  api_402:'На балансе DeepSeek закончились деньги. Пополните его на platform.deepseek.com.',
+  api_401:'Ключ API не подошёл. Проверьте его в настройках ИИ.',
+  api_429:'Слишком много запросов. Подождите минуту и попробуйте снова.',
+  api_400:'Сервер не принял запрос. Попробуйте переформулировать.',
+  api_422:'Сервер не принял запрос. Попробуйте переформулировать.',
+  invalid_json:'Ответ пришёл в неожиданном виде. Попробуйте ещё раз.',
+  rate_limited:'Слишком много запросов подряд. Подождите минуту.',
+  sampling_disabled:'Ответы Claude сейчас недоступны для вашего аккаунта.',
+  not_granted:'Без разрешения тренер не может ответить.',
+  no_engine:'Тренер не подключён: выберите Claude или DeepSeek и вставьте ключ.'};
+function wdOf(k){return weekdayName(parseKey(k).getDay());}
+function planLine(p){const ex=getEx(p.ex),v=p.k==='time'?(p.t||30)+' с':p.k==='timem'?(p.t||10)+' мин':p.k==='dist'?(p.d||0)+' км':(p.r||10);
+  return p.ex+' «'+(ex?ex.name:p.n)+'» '+(p.goal||3)+'×'+v+(p.w?' · '+p.w+' кг':'');}
+function coachEquips(pr){
+  if(pr&&pr.accepted&&pr.places&&pr.places.length)return usedPlaces(pr).concat(pr.places).filter((p,i,a)=>a.indexOf(p)===i).map(p=>({place:p,eq:placeEquip(pr,p)}));
+  return [{place:null,eq:equipNow()}];
+}
+function coachContext(){
+  const t=todayKey(),pr=prof(),L=[];
+  L.push('Сегодня '+t+' ('+wdOf(t)+'). В приложении открыт день '+UI.date+'.');
+  if(pr&&pr.accepted){
+    L.push('Цель: '+GOALS[pr.goal].name+(pr.area&&DIR[pr.area]?' — '+DIR[pr.area].name:'')+'. Пол '+(pr.sex==='f'?'женский':'мужской')+', '+pr.age+' лет, рост '+pr.height+' см. Вес на старте '+pr.weight+' кг, сейчас '+curWeight(pr)+' кг, цель '+pr.target+' кг к '+pr.end+'.');
+    L.push('Норма: '+pr.kcal+' ккал, белки '+pr.p+' г, жиры '+pr.f+' г, углеводы '+pr.c+' г.');
+    L.push('Дни тренировок: '+pr.days.map(d=>weekdayName(d)+(dayPlaceOf(pr,d)?' — '+PLACE_NAME[dayPlaceOf(pr,d)]:'')).join(', ')+'.');
+    const ws=(pr.weights||[]).slice(-6);if(ws.length>1)L.push('Взвешивания: '+ws.map(w=>w.d+' '+w.kg).join('; ')+'.');
+  }else L.push('Цель и программа не заданы. Норма калорий '+foodGoal()+' ккал.');
+  L.push('План тренировок (id «название» подходы×повторы):');
+  let any=false;
+  for(let i=-1;i<10;i++){const k=addDays(t,i),pl=dayPlan(k);if(!pl.length)continue;any=true;const si=schedInfo(k);
+    L.push('- '+k+' '+wdOf(k)+(si&&si.place?' · '+PLACE_NAME[si.place]:'')+(si?' · тренировка '+si.letter:'')+': '+pl.map(planLine).join('; '));}
+  if(!any)L.push('- плана нет');
+  L.push('Сделано за 7 дней:');
+  let did=false;
+  for(let i=0;i>-7;i--){const k=addDays(t,i),s=daySets(k);if(!s.length)continue;did=true;const by={};
+    s.forEach(x=>{(by[x.ex]=by[x.ex]||[]).push(fmtSet(x));});
+    L.push('- '+k+' '+wdOf(k)+': '+Object.keys(by).map(id=>{const ex=getEx(id);return (ex?ex.name:id)+' ('+by[id].join(', ')+')';}).join('; '));}
+  if(!did)L.push('- тренировок не отмечено');
+  const mt=dayMeals(t),st=sumMeals(mt);
+  L.push('Съедено сегодня: '+r0(st.kcal)+' ккал, Б '+r0(st.p)+' Ж '+r0(st.f)+' У '+r0(st.c)+(mt.length?' — '+mt.map(m=>m.name+' '+r0(m.kcal)+' ккал').join('; '):'')+'.');
+  const wk=[];for(let i=-1;i>-7;i--){const k=addDays(t,i),m=dayMeals(k);if(m.length)wk.push(k+' '+r0(sumMeals(m).kcal));}
+  if(wk.length)L.push('Калории за прошлые дни: '+wk.join('; ')+'.');
+  const eqs=coachEquips(pr),multi=eqs.length>1;
+  L.push('Каталог упражнений, доступных пользователю (id название [направление'+(multi?'; где можно':'')+']):');
+  allEx().forEach(ex=>{if(S.config.hidden.indexOf(ex.id)>=0)return;const ok=eqs.filter(e=>exOk(ex,e.eq));if(!ok.length)return;
+    L.push(ex.id+' '+ex.name+' ['+(DIR[ex.dir]?DIR[ex.dir].name:ex.dir)+(multi?'; '+ok.map(e=>PLACE_NAME[e.place]).join(', '):'')+']');});
+  return L.join('\n');
+}
+function coachSystem(){
+  return 'Ты — персональный тренер и нутрициолог в приложении «Журнал тренировок». Пользователь пишет тебе в чате на телефоне.\n'+
+    'Правила:\n'+
+    '- Отвечай по-русски, коротко и конкретно: обычно 2–6 предложений или короткий список. Подробно — только если просят.\n'+
+    '- Опирайся на данные пользователя ниже: цель, норму, план, сделанные подходы и съеденное. Считай цифры, а не отвечай общими словами.\n'+
+    '- Ты не врач: при боли, травме, болезни, беременности или лекарствах советуй обратиться к врачу и не давай схем лечения.\n'+
+    '- Меняй план тренировок, только когда пользователь прямо просит или соглашается на твоё предложение. Тогда верни действия в "actions". Бери id только из каталога, даты — сегодня или позже. Учитывай место тренировки в этот день.\n'+
+    '- Не пиши, что изменил план, если не вернул действие.\n'+
+    'Ответ — только JSON-объект без текста вокруг:\n'+
+    '{"reply":"текст для пользователя","actions":[]}\n'+
+    'Действия:\n'+
+    '{"type":"replace","date":"ГГГГ-ММ-ДД","from":"id_старого","to":"id_нового"}\n'+
+    '{"type":"add","date":"ГГГГ-ММ-ДД","ex":"id","sets":3,"reps":10}\n'+
+    '{"type":"remove","date":"ГГГГ-ММ-ДД","ex":"id"}\n'+
+    'Для упражнений на время "reps" — секунды. В "reply" можно переносы строк и списки с "- ", без заголовков и таблиц.\n\n'+
+    'Данные пользователя:\n'+coachContext();
+}
+function planItemFor(ex,sets,reps){
+  const dr=draftFor(ex),it={ex:ex.id,n:ex.name,dir:ex.dir,k:ex.kind,tu:ex.tu,goal:Math.max(1,Math.min(10,Math.round(+sets)||defGoal(ex)))};
+  ['w','r','t','d'].forEach(f=>{if(dr[f]!=null)it[f]=dr[f];});
+  const r=Math.round(+reps);
+  if(r>0&&r<=600){if(ex.kind==='time')it.t=r;else if(ex.kind==='reps'||ex.kind==='wr')it.r=Math.min(100,r);}
+  return it;
+}
+function dayLabel(k){const t=todayKey();return k===t?'Сегодня':k===addDays(t,1)?'Завтра':wdOf(k)+', '+dateLong(k);}
+function applyCoachActions(list){
+  const acts=[],undo={},t=todayKey();
+  const snap=k=>{if(!undo[k]){const d=day(k);undo[k]={plan:d&&d.plan?clone(d.plan):[],edited:!!(d&&d.planEdited)};}};
+  (Array.isArray(list)?list:[]).slice(0,12).forEach(a=>{
+    if(!a||typeof a!=='object')return;
+    const k=/^\d{4}-\d{2}-\d{2}$/.test(String(a.date||''))?String(a.date):UI.date;
+    if(k<t||k>addDays(t,120))return;
+    const type=String(a.type||''),pl=dayPlan(k);
+    if(type==='replace'){
+      const from=getEx(a.from),to=getEx(a.to);if(!from||!to||from.id===to.id)return;
+      if(!pl.some(p=>p.ex===from.id)||pl.some(p=>p.ex===to.id))return;
+      snap(k);const own=ownPlan(k),j=own.findIndex(p=>p.ex===from.id),old=own[j];
+      own[j]=planItemFor(to,old.goal,old.k===to.kind?(to.kind==='time'?old.t:old.r):null);
+      persistDay(k);acts.push({label:dayLabel(k)+': '+from.name+' → '+to.name});
+    }else if(type==='add'){
+      const ex=getEx(a.ex);if(!ex||pl.some(p=>p.ex===ex.id))return;
+      snap(k);ownPlan(k).push(planItemFor(ex,a.sets,a.reps));
+      persistDay(k);acts.push({label:dayLabel(k)+': добавлено «'+ex.name+'»'});
+    }else if(type==='remove'){
+      const ex=getEx(a.ex);if(!ex||!pl.some(p=>p.ex===ex.id))return;
+      snap(k);const own=ownPlan(k);day(k).plan=own.filter(p=>p.ex!==ex.id);
+      persistDay(k);acts.push({label:dayLabel(k)+': убрано «'+ex.name+'»'});
+    }
+  });
+  return {acts:acts,undo:acts.length?undo:null};
+}
+function undoCoach(i){
+  const m=COACH.msgs[i];if(!m||!m.undo||m.undone)return;
+  Object.keys(m.undo).forEach(k=>{const u=m.undo[k],d=ensureDay(k);d.plan=clone(u.plan);d.planEdited=u.edited;persistDay(k);});
+  m.undone=true;saveCoach();render();toast('Изменения в плане отменены.');
+}
+function chatHistory(){
+  let h=COACH.msgs.slice(-16).map(m=>({role:m.role,content:m.role==='assistant'?m.text+(m.acts&&m.acts.length?'\n[Изменения в плане: '+m.acts.map(a=>a.label).join('; ')+(m.undone?' — пользователь отменил их':'')+']':''):m.text}));
+  while(h.length&&h[0].role!=='user')h.shift();
+  return h;
+}
+async function coachSend(text){
+  text=String(text||'').trim();if(!text||COACH.busy)return;
+  const eng=aiEngine(false);
+  if(!eng){COACH.err='no_engine';COACH.keys=true;renderMain();return;}
+  COACH.msgs.push({role:'user',text:text.slice(0,2000),at:Date.now()});COACH.draft='';COACH.err='';COACH.busy=true;COACH.armClear=false;
+  saveCoach();renderMain();scrollCoach();
+  const ctl=new AbortController();COACH.ctl=ctl;
+  try{
+    const sys=coachSystem(),hist=chatHistory();let o;
+    if(eng==='ds')o=looseJSON(await dsCall({max_tokens:1500,response_format:{type:'json_object'},messages:[{role:'system',content:sys}].concat(hist)},ctl.signal));
+    else if(eng==='api')o=looseJSON(await anthCall({system:sys,messages:hist},ctl.signal));
+    else o=await SAMPLE.json(sys+'\n\nПереписка (последнее сообщение — от пользователя, ответь на него):\n'+hist.map(m=>(m.role==='user'?'Пользователь: ':'Тренер: ')+m.content).join('\n\n'),{signal:ctl.signal});
+    if(COACH.ctl!==ctl)return;
+    const reply=String((o&&(o.reply||o.text||o.answer))||'').trim();
+    const res=applyCoachActions(o&&o.actions);
+    COACH.msgs.push({role:'assistant',text:(reply||'Готово.').slice(0,4000),at:Date.now(),acts:res.acts,undo:res.undo});
+  }catch(e){
+    if(COACH.ctl!==ctl)return;
+    if(!(e&&(e.name==='AbortError'||e.code==='cancelled')))COACH.err=(e&&e.code)||'x';
+  }
+  COACH.busy=false;COACH.ctl=null;saveCoach();render();scrollCoach();
+}
+function scrollCoach(){if(UI.tab!=='coach')return;setTimeout(()=>{try{window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'});}catch(e){}},30);}
+function fmtReply(s){
+  const lines=esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').split('\n');let h='',inList=false;
+  lines.forEach(l=>{const m=l.match(/^\s*(?:[-•*]|\d+[.)])\s+(.*)$/);
+    if(m){if(!inList){h+='<ul>';inList=true;}h+='<li>'+m[1]+'</li>';}
+    else{if(inList){h+='</ul>';inList=false;}if(l.trim())h+='<p>'+l+'</p>';}});
+  return h+(inList?'</ul>':'');
+}
+const COACH_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-7l-5 3.8V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.8h.01M12 10.8h.01M16 10.8h.01"/></svg>';
+const SEND_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>';
+const COACH_SUG=['Чем заменить упражнение в сегодняшней тренировке?','Что съесть на ужин, чтобы попасть в норму?','Сделай завтрашнюю тренировку короче','Как у меня дела с целью?'];
+function coachView(){
+  const eng=aiEngine(false);
+  let h='<section class="card glass chead"><div class="ctop"><span class="cava">'+COACH_ICO+'</span><div><b>Тренер</b><span>'+
+    (eng==='ds'?'DeepSeek':eng?'Claude':'ИИ не подключён')+(eng?' · видит цель, план и питание':'')+'</span></div>'+
+    (!SAMPLE?'<button class="rm" data-coach="keys" aria-expanded="'+COACH.keys+'">'+(COACH.keys?'Скрыть':'Настройки')+'</button>':'')+'</div></section>';
+  if(!SAMPLE&&(COACH.keys||(!eng&&!COACH.msgs.length)))h+=aiBlock();
+  h+='<div class="chat" id="chat" aria-live="polite">';
+  if(!COACH.msgs.length){
+    h+='<p class="cintro">Спросите про технику, замену упражнения, питание или прогресс. Тренер видит вашу цель, план, отмеченные подходы и еду за день. Если попросите, он поменяет упражнения в плане.</p>'+
+      '<div class="csug">'+COACH_SUG.map(s=>'<button class="press" data-csug="'+esc(s)+'">'+esc(s)+'</button>').join('')+'</div>';
+  }
+  COACH.msgs.forEach((m,i)=>{
+    if(m.role==='user'){h+='<div class="msg me"><div class="bub">'+esc(m.text).replace(/\n/g,'<br>')+'</div></div>';return;}
+    h+='<div class="msg bot"><div class="bub">'+fmtReply(m.text)+
+      (m.acts&&m.acts.length?'<div class="cacts">'+m.acts.map(a=>'<span'+(m.undone?' class="off"':'')+'>'+(m.undone?'':'✓ ')+esc(a.label)+'</span>').join('')+
+        (m.undo&&!m.undone?'<button class="rm" data-cundo="'+i+'">Отменить изменения</button>':m.undone?'<i>Изменения отменены</i>':'')+'</div>':'')+
+      '</div></div>';
+  });
+  if(COACH.busy)h+='<div class="msg bot"><div class="bub typing" aria-label="Тренер печатает"><i></i><i></i><i></i></div></div>';
+  if(COACH.err)h+='<p class="ferr">'+esc(AI_ERR[COACH.err]||'Не получилось получить ответ. Попробуйте ещё раз.')+'</p>';
+  if(COACH.msgs.length&&!COACH.busy)h+='<div class="cclear"><button class="rm" data-coach="clear">'+(COACH.armClear?'Точно очистить переписку?':'Очистить переписку')+'</button></div>';
+  h+='</div><div class="cspace" aria-hidden="true"></div>'+
+    '<form class="composer glass" id="coachForm"><textarea id="coachIn" rows="1" maxlength="2000" placeholder="Спросите тренера…" aria-label="Сообщение тренеру">'+esc(COACH.draft)+'</textarea>'+
+    '<button class="send tint press" type="submit" aria-label="Отправить"'+(COACH.busy?' disabled':'')+'>'+SEND_ICO+'</button></form>';
+  return h;
+}
+function coachClick(ds){
+  if(ds.csug){coachSend(ds.csug);return true;}
+  if(ds.cundo!==undefined){undoCoach(+ds.cundo);return true;}
+  if(ds.coach==='keys'){COACH.keys=!COACH.keys;FOOD.keyEdit=false;renderMain();return true;}
+  if(ds.coach==='clear'){if(!COACH.armClear){COACH.armClear=true;renderMain();return true;}
+    COACH.msgs=[];COACH.err='';COACH.armClear=false;saveCoach();renderMain();return true;}
+  return false;
+}
+function sizeCoachIn(el){el.style.height='auto';el.style.height=Math.min(120,el.scrollHeight)+'px';}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='coachIn'){COACH.draft=e.target.value;sizeCoachIn(e.target);}});
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='coachForm'){e.preventDefault();const i=$('coachIn');coachSend(i?i.value:COACH.draft);}});
+
 /* ---------- toast ---------- */
 let toastTimer=null,undoFn=null;
 function toast(msg,undo){
@@ -2621,10 +2885,11 @@ document.addEventListener('click',e=>{
   if(ds.beq||ds.beqpre){S.config.equip=ds.beqpre?EQUIP_PRESET[ds.beqpre].slice():eqToggle(equipNow().slice(),ds.beq);persistConfig();renderMain();return;}
   if(ds.seq||ds.seqpre){readSetup();SETUP.d.equip=ds.seqpre?EQUIP_PRESET[ds.seqpre].slice():eqToggle((SETUP.d.equip||equipNow()).slice(),ds.seq);renderMain();return;}
   if((ds.sgoal||ds.sarea||ds.ssex||ds.sday||ds.splace||ds.sdp||ds.speq||ds.seqt||ds.setup||ds.calm||ds.wstep)&&goalClick(ds))return;
-  if((ds.food||ds.fstep||ds.fgoal||ds.meal)&&foodClick(ds))return;
+  if((ds.csug||ds.coach||ds.cundo!==undefined)&&coachClick(ds))return;
+  if((ds.food||ds.aiprov||ds.fstep||ds.fgoal||ds.meal)&&foodClick(ds))return;
   if(!ds.xdel&&UI.armed){UI.armed=null;if(isBuilding()&&!ds.pick&&!ds.goal&&!ds.pstep)renderMain();}
   if(ds.build){UI.building=ds.build==='1';UI.open=null;UI.addOpen=false;UI.tab='day';render();window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(ds.tab){UI.tab=ds.tab;UI.building=false;UI.open=null;UI.addOpen=false;render();window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(ds.tab){UI.tab=ds.tab;UI.building=false;UI.open=null;UI.addOpen=false;render();if(UI.tab==='coach')scrollCoach();else window.scrollTo({top:0,behavior:'smooth'});return;}
   if(ds.dir){UI.dir=ds.dir;UI.addOpen=false;lsSet('wt-dir',ds.dir);render();return;}
   if(ds.tech){UI.tech=UI.tech===ds.tech?null:ds.tech;renderMain();return;}
   if(ds.demomode){demoMode=ds.demomode;try{localStorage.setItem('wt-demo',demoMode);}catch(e){}renderMain();return;}
