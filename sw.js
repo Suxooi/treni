@@ -1,6 +1,6 @@
 // Журнал тренировок — офлайн-кэш. Меняйте VERSION при каждом обновлении файлов.
-const VERSION = 'trenirovki-202610211705';
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png"];
+const VERSION = 'trenirovki-202610211908';
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192-v2.png", "./icons/icon-512-v2.png", "./icons/apple-touch-icon-v2.png", "./icons/favicon-32-v2.png"];
 
 self.addEventListener('install', (e) => {
   // cache:'reload' — мимо HTTP-кэша браузера, иначе GitHub Pages может отдать прошлую версию
